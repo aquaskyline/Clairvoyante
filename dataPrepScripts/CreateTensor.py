@@ -46,6 +46,8 @@ def output_aln_tensor(args):
     bam_fn = args.bam_fn
     pi_fn = args.pi_fn
     ctgName = args.ctgName
+    ctgStart = args.ctgStart
+    ctgEnd = args.ctgEnd
     samtools = args.samtools
     ref_fn = args.ref_fn
     tensor_fn = args.tensor_fn
@@ -70,7 +72,9 @@ def output_aln_tensor(args):
             pos = int(row[1])
             beginToEnd[ pos-(param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
 
-    p = subprocess.Popen(shlex.split("%s view %s" % (samtools, bam_fn) ), stdout=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+        if ctgStart and ctgEnd\
+        else subprocess.Popen(shlex.split("%s view %s %s" % (samtools, bam_fn, ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     centerToAln = {}
 
@@ -168,6 +172,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--ctgName', type=str, default="chr17", 
             help="The name of sequence to be processed, defaults: chr17")
+
+    parser.add_argument('--ctgStart', type=int, default=None,
+            help="The 1-bsae starting position of the sequence to be processed, defaults: None")
+
+    parser.add_argument('--ctgEnd', type=int, default=None,
+            help="The inclusive ending position of the sequence to be processed, defaults: None")
 
     parser.add_argument('--samtools', type=str, default="samtools", 
             help="Path to the 'samtools', default: samtools")

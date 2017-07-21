@@ -79,7 +79,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout3"):
-                    dropout3 = selu.dropout_selu(h3, param.dropoutRate, training=phasePH)
+                    dropout3 = tf.nn.dropout(h3, param.dropoutRate)
 
                 with tf.name_scope('fc4'):
                     h4 = tf.layers.dense(inputs=dropout3,
@@ -88,7 +88,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout4"):
-                    dropout4 = selu.dropout_selu(h4, param.dropoutRate, training=phasePH)
+                    dropout4 = tf.nn.dropout(h4, param.dropoutRate)
 
                 with tf.name_scope('fc5'):
                     h5 = tf.layers.dense(inputs=dropout4,
@@ -97,7 +97,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout5"):
-                    dropout5 = selu.dropout_selu(h5, param.dropoutRate, training=phasePH)
+                    dropout5 = tf.nn.dropout(h5, param.dropoutRate)
 
                 with tf.name_scope('Outputs'):
                     Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid)

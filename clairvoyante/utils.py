@@ -83,7 +83,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
                 baseVec[5] = 0.
                 baseVec[6] = 0.
                 baseVec[7] = 1.
-                baseVec[8] = 1.
+                baseVec[8] = 0.
 
             if len(row[3]) > 1:  # insertion
                 baseVec[4] = 0.

@@ -35,6 +35,8 @@ def makeCandidates( args ):
     threshold = args.threshold
     minCoverage = args.minCoverage
     ctgName = args.ctgName
+    ctgStart = args.ctgStart
+    ctgEnd = args.ctgEnd
     samtools = args.samtools
     ref_fn = args.ref_fn
 
@@ -50,7 +52,10 @@ def makeCandidates( args ):
         print >> sys.stderr, "Cannot find reference sequence %s" % (ctgName)
         sys.exit(1)
 
-    p = subprocess.Popen(shlex.split("%s view %s" % (samtools, bam_fn ) ), stdout=subprocess.PIPE, bufsize=8388608)
+    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+        if ctgStart and ctgEnd\
+        else subprocess.Popen(shlex.split("%s view %s %s" % (samtools, bam_fn, ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+
     pileup = {}
     sweep = 0
 
@@ -145,14 +150,20 @@ if __name__ == "__main__":
     parser.add_argument('--pi_fn', type=str, default="pileup.out", 
             help="Pile-up count output, default: pileup.out")
 
-    parser.add_argument('--threshold', type=float, default=0.15, 
-            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: 0.15")
+    parser.add_argument('--threshold', type=float, default=0.1, 
+            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: 0.1")
 
     parser.add_argument('--minCoverage', type=float, default=4, 
             help="Minimum coverage required to call a variant, default: 4")
 
     parser.add_argument('--ctgName', type=str, default="chr17", 
             help="The name of sequence to be processed, defaults: chr17")
+    
+    parser.add_argument('--ctgStart', type=int, default=None, 
+            help="The 1-bsae starting position of the sequence to be processed, defaults: None")
+
+    parser.add_argument('--ctgEnd', type=int, default=None, 
+            help="The inclusive ending position of the sequence to be processed, defaults: None")
 
     parser.add_argument('--samtools', type=str, default="samtools", 
             help="Path to the 'samtools', default: samtools")
