@@ -122,7 +122,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
             
             if pos not in Y:
                 baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0.]
-                baseVec[base2num[refSeq[7]]] = 1.
+                baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
                 baseVec[8] = 1.
                 Y[pos] = baseVec
                 
