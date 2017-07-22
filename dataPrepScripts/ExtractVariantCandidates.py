@@ -1,10 +1,11 @@
+import sys
+sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/bin')
 from readfq import readfq
 import argparse
 import os
 import re
 import shlex
 import subprocess
-import sys
 from math import log
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
