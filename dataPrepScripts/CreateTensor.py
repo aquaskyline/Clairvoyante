@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/bin')
+sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/lib/python2.7/site-packages/')
 from readfq import readfq
 import argparse
 import os
@@ -27,28 +27,28 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                         aln_code[offset][ base2num[queryBase] ][1] += 1.0
                         aln_code[offset][ base2num[refBase] ][2] += 1.0
                         aln_code[offset][ base2num[queryBase] ][3] += 1.0
-                        for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                            aln_code[offset][i][0] -= 0.333333
-                            aln_code[offset][i][2] -= 0.333333
-                        for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                            aln_code[offset][i][1] -= 0.333333
-                            aln_code[offset][i][3] -= 0.333333
+                        #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
+                        #    aln_code[offset][i][0] -= 0.333333
+                        #    aln_code[offset][i][2] -= 0.333333
+                        #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
+                        #    aln_code[offset][i][1] -= 0.333333
+                        #    aln_code[offset][i][3] -= 0.333333
                     else:
                         aln_code[offset][ base2num[queryBase] ][1] += 1.0
-                        for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                            aln_code[offset][i][1] -= 0.333333
+                        #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
+                        #    aln_code[offset][i][1] -= 0.333333
                 elif queryBase == "-":
                     if refBase != "-":
                         aln_code[offset][ base2num[refBase] ][2] += 1.0
-                        for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                            aln_code[offset][i][2] -= 0.333333
+                        #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
+                        #    aln_code[offset][i][2] -= 0.333333
                     else:
                         print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 else:
                     print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
 
-    for i in range(param.matrixNum):
-        aln_code[:,:,i] = preprocessing.normalize(aln_code[:,:,i])
+    #for i in range(param.matrixNum):
+    #    aln_code[:,:,i] = preprocessing.normalize(aln_code[:,:,i])
 
     outputLine = []
     outputLine.append( "%s %d %s" %  (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum]) )

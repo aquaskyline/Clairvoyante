@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 #import clairvoyante as cv
 import utils as utils
@@ -40,7 +41,7 @@ for i in range(1, int(XIdx/batchSize)*30+1):
             nl = m.setLearningRate()
             print >> sys.stderr, "New learning rate: %.2e" % nl
         epoch += 1
-        
+
 # pick the parameter set of the smallest validation loss
 validationLosts.sort()
 i = validationLosts[0][1]

@@ -1,4 +1,4 @@
-flankingBaseNum = 7
+flankingBaseNum = 16
 matrixNum = 4
 batchSize = 500
 dropoutRate = 0.02

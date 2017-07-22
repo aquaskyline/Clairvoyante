@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/bin')
+sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/lib/python2.7/site-packages/')
 import intervaltree
 import numpy as np
 import random
