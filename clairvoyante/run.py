@@ -1,9 +1,8 @@
 import sys
-sys.path.append('../')
 
 #import clairvoyante as cv
-import clairvoyante.utils as utils
-import clairvoyante.clairvoyante as cv
+import utils as utils
+import clairvoyante as cv
 
 # load the generate alignment tensors 
 # we use only variants overlapping with the regions defined in `CHROM21_v.3.3.2_highconf_noinconsistent.bed`
