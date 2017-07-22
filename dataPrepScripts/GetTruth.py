@@ -26,7 +26,7 @@ def OutputVariant( args ):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description='Extract variant type and allele from a Truth dataset' )
-    
+
     parser.add_argument('--vcf_fn', type=str, default="input.vcf",
             help="Truth bam file input, default: input.vcf")
 

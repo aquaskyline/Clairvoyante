@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--ctgName', type=str, default="chr17", 
             help="The name of sequence to be processed, defaults: chr17")
-    
+
     parser.add_argument('--ctgStart', type=int, default=None, 
             help="The 1-bsae starting position of the sequence to be processed, defaults: None")
 
