@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/bin')
 import intervaltree
 import numpy as np
 import random
@@ -11,7 +13,7 @@ def GetBatch(X, Y, size=param.batchSize):
 
 def GetAlnArray( tensor_fn ):
 
-    X = {}  
+    X = {}
 
     with open( tensor_fn ) as f:
         for row in f: # A variant per row
@@ -25,14 +27,11 @@ def GetAlnArray( tensor_fn ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            if sum(x[param.flankingBaseNum,:,0]) < param.minDepth: # Skip low depth variants
-                continue
-            
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
-            
+
             X[pos] = x
-                
+
     allPos = sorted(X.keys())
 
     XArray = []
@@ -91,10 +90,10 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
                 baseVec[6] = 1.
                 baseVec[7] = 0.
                 baseVec[8] = 0.
-        
+
             Y[pos] = baseVec
-            
-    X = {}  
+
+    X = {}
 
     with open( tensor_fn ) as f:
         for row in f:
@@ -112,20 +111,17 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            if sum(x[param.flankingBaseNum,:,0]) < param.minDepth:
-                continue
-            
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
-            
+
             X[pos] = x
-            
+
             if pos not in Y:
                 baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0.]
                 baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
                 baseVec[8] = 1.
                 Y[pos] = baseVec
-                
+
     allPos = sorted(X.keys())
     random.shuffle(allPos)
 
