@@ -6,19 +6,19 @@ class Clairvoyante(object):
 
     def __init__(self, inputShape = (2*param.flankingBaseNum+1, 4, param.matrixNum),
                        outputShape1 = (4, ), outputShape2 = (5, ),
-                       kernelSize1 = (2, 4), kernelSize2 = (3, 4),
-                       pollSize1 = (param.flankingBaseNum, 1), pollSize2 = (3, 1),
-                       filterNum = 48,
-                       hiddenLayerUnitNumber = 48,
+                       kernelSize1 = (1, 4), kernelSize2 = (2, 4), kernelSize3 = (3, 4),
+                       pollSize1 = (5, 1), pollSize2 = (4, 1), pollSize3 = (3, 1),
+                       numFeature1 = 16, numFeature2 = 32, numFeature3 = 48,
+                       hiddenLayerUnits4 = 336, hiddenLayerUnits5 = 84,
                        initialLearningRate = param.initialLearningRate,
                        learningRateDecay = param.learningRateDecay,
                        dropoutRate = param.dropoutRate):
         self.inputShape = inputShape
         self.outputShape1 = outputShape1; self.outputShape2 = outputShape2
-        self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2
-        self.pollSize1 = pollSize1; self.pollSize2 = pollSize2
-        self.filterNum = filterNum
-        self.hiddenLayerUnitNumber = hiddenLayerUnitNumber
+        self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2; self.kernelSize3 = kernelSize3
+        self.pollSize1 = pollSize1; self.pollSize2 = pollSize2; self.pollSize3 = pollSize3
+        self.numFeature1 = numFeature1; self.numFeature2 = numFeature2; self.numFeature3 = numFeature3
+        self.hiddenLayerUnits4 = hiddenLayerUnits4; self.hiddenLayerUnits5 = hiddenLayerUnits5
         self.learningRateVal = initialLearningRate
         self.learningRateDecay = learningRateDecay
         self.dropoutRateVal = dropoutRate
@@ -47,7 +47,7 @@ class Clairvoyante(object):
             with tf.name_scope('Layers'):
                 with tf.name_scope('conv1'):
                     conv1 = tf.layers.conv2d(inputs=XPH,
-                                             filters=self.filterNum,
+                                             filters=self.numFeature1,
                                              kernel_size=self.kernelSize1,
                                              kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                              padding="same",
@@ -60,7 +60,7 @@ class Clairvoyante(object):
 
                 with tf.name_scope('conv2'):
                     conv2 = tf.layers.conv2d(inputs=pool1,
-                                             filters=self.filterNum,
+                                             filters=self.numFeature2,
                                              kernel_size=self.kernelSize2,
                                              kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                              padding="same",
@@ -71,23 +71,27 @@ class Clairvoyante(object):
                                                     pool_size=self.pollSize2,
                                                     strides=1)
 
-                flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1))
-                flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1))
-                flat_size *= self.filterNum
-                conv2_flat =  tf.reshape(pool2, [-1,  flat_size])
+                with tf.name_scope('conv3'):
+                    conv3 = tf.layers.conv2d(inputs=pool2,
+                                             filters=self.numFeature3,
+                                             kernel_size=self.kernelSize3,
+                                             kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                             padding="same",
+                                             activation=selu.selu)
 
-                with tf.name_scope('fc3'):
-                    h3 = tf.layers.dense(inputs=conv2_flat,
-                                         units=self.hiddenLayerUnitNumber,
-                                         kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
-                                         activation=selu.selu)
+                with tf.name_scope('pool3'):
+                    pool3 = tf.layers.max_pooling2d(inputs=conv3,
+                                                    pool_size=self.pollSize3,
+                                                    strides=1)
 
-                with tf.name_scope("dropout3"):
-                    dropout3 = selu.dropout_selu(h3, dropoutRatePH, training=phasePH)
+                flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1) - (self.pollSize3[0] - 1))
+                flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1) - (self.pollSize3[1] - 1))
+                flat_size *= self.numFeature3
+                conv3_flat =  tf.reshape(pool3, [-1,  flat_size])
 
                 with tf.name_scope('fc4'):
-                    h4 = tf.layers.dense(inputs=dropout3,
-                                         units=self.hiddenLayerUnitNumber,
+                    h4 = tf.layers.dense(inputs=conv3_flat,
+                                         units=self.hiddenLayerUnits4,
                                          kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                          activation=selu.selu)
 
@@ -96,7 +100,7 @@ class Clairvoyante(object):
 
                 with tf.name_scope('fc5'):
                     h5 = tf.layers.dense(inputs=dropout4,
-                                         units=self.hiddenLayerUnitNumber,
+                                         units=self.hiddenLayerUnits5,
                                          kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                          activation=selu.selu)
 

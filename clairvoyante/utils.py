@@ -20,6 +20,7 @@ def GetAlnArray( tensor_fn ):
             row = row.strip().split()
             ctgName = row[0]  # Column 1: sequence name
             pos = int(row[1]) # Column 2: position
+            key = ctgName + ":" + str(pos)
             refSeq = row[2]  # Column 3: reference seqeunces
 
             if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]: # Skip non-ACGT bases
@@ -30,7 +31,7 @@ def GetAlnArray( tensor_fn ):
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
 
-            X[pos] = x
+            X[key] = x
 
     allPos = sorted(X.keys())
 
@@ -43,27 +44,27 @@ def GetAlnArray( tensor_fn ):
 
     return XArray, posArray
 
-def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
-    tree = intervaltree.IntervalTree()
+def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
+    tree = {}
     with open(bed_fn) as f:
         for row in f:
             row = row.strip().split()
-            if row[0] != ctgName:
-                continue
+            name = row[0]
+            if name not in tree:
+                tree[name] = intervaltree.IntervalTree()
             begin = int(row[1])
             end = int(row[2])
-            tree.addi(begin, end)
+            tree[name].addi(begin, end)
 
     Y = {}
     with open( var_fn ) as f:
         for row in f:
-
             row = row.strip().split()
             ctgName = row[0]
-
             pos = int(row[1])
-            if len(tree.search(pos)) == 0:
+            if len(tree[ctgName].search(pos)) == 0:
                 continue
+            key = ctgName + ":" + str(pos)
 
             baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0.]  # A, C, G, T, het, hom, insertion, deletion, ref
 
@@ -75,7 +76,6 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
             elif row[4] == "1" and row[5] == "1":
                 baseVec[base2num[row[3][0]]] = 1
                 baseVec[5] = 1.
-
 
             if len(row[2]) > 1:  # deletion
                 baseVec[4] = 0.
@@ -91,20 +91,17 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
                 baseVec[7] = 0.
                 baseVec[8] = 0.
 
-            Y[pos] = baseVec
+            Y[key] = baseVec
 
     X = {}
-
     with open( tensor_fn ) as f:
         for row in f:
-
             row = row.strip().split()
             ctgName = row[0]
-
             pos = int(row[1])
-            if len(tree.search(pos)) == 0:
+            if len(tree[ctgName].search(pos)) == 0:
                 continue
-
+            key = ctgName + ":" + str(pos)
             refSeq = row[2]
             if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]:
                 continue
@@ -114,12 +111,12 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
 
-            X[pos] = x
+            X[key] = x
 
-            if pos not in Y:
+            if key not in Y:
                 baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 1.]
                 baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
-                Y[pos] = baseVec
+                Y[key] = baseVec
 
     allPos = sorted(X.keys())
     random.shuffle(allPos)
@@ -127,10 +124,10 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
     XArray = []
     YArray = []
     posArray = []
-    for pos in allPos:
-        XArray.append(X[pos])
-        YArray.append(Y[pos])
-        posArray.append(pos)
+    for key in allPos:
+        XArray.append(X[key])
+        YArray.append(Y[key])
+        posArray.append(key)
     XArray = np.array(XArray)
     YArray = np.array(YArray)
 
