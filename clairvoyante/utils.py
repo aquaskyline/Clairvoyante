@@ -27,8 +27,8 @@ def GetAlnArray( tensor_fn ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            #for i in range(1, param.matrixNum):
-            #    x[:,:,i] -= x[:,:,0]
+            for i in range(1, param.matrixNum):
+                x[:,:,i] -= x[:,:,0]
 
             X[pos] = x
 
@@ -111,8 +111,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            #for i in range(1, param.matrixNum):
-            #    x[:,:,i] -= x[:,:,0]
+            for i in range(1, param.matrixNum):
+                x[:,:,i] -= x[:,:,0]
 
             X[pos] = x
 

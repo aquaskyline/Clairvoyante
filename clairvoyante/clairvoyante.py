@@ -9,15 +9,19 @@ class Clairvoyante(object):
                        kernelSize1 = (2, 4), kernelSize2 = (3, 4),
                        pollSize1 = (param.flankingBaseNum, 1), pollSize2 = (3, 1),
                        filterNum = 48,
-                       hiddenLayerUnitNumber = 48):
+                       hiddenLayerUnitNumber = 48,
+                       initialLearningRate = param.initialLearningRate,
+                       learningRateDecay = param.learningRateDecay,
+                       dropoutRate = param.dropoutRate):
         self.inputShape = inputShape
         self.outputShape1 = outputShape1; self.outputShape2 = outputShape2
         self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2
         self.pollSize1 = pollSize1; self.pollSize2 = pollSize2
         self.filterNum = filterNum
         self.hiddenLayerUnitNumber = hiddenLayerUnitNumber
-        self.learningRateVal = param.initialLearningRate
-        self.learningRateDecay = param.learningRateDecay
+        self.learningRateVal = initialLearningRate
+        self.learningRateDecay = learningRateDecay
+        self.dropoutRateVal = dropoutRate
         self.g = tf.Graph()
         self._buildGraph()
         self.session = tf.Session(graph = self.g)
@@ -36,6 +40,9 @@ class Clairvoyante(object):
 
                 phasePH = tf.placeholder(tf.bool, shape=[])
                 self.phasePH = phasePH
+
+                dropoutRatePH = tf.placeholder(tf.float32, shape=[])
+                self.dropoutRatePH = dropoutRatePH
 
             with tf.name_scope('Layers'):
                 with tf.name_scope('conv1'):
@@ -64,8 +71,8 @@ class Clairvoyante(object):
                                                     pool_size=self.pollSize2,
                                                     strides=1)
 
-                flat_size = ( (param.flankingBaseNum*2+1) - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1))
-                flat_size *= ( 4 - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1))
+                flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1))
+                flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1))
                 flat_size *= self.filterNum
                 conv2_flat =  tf.reshape(pool2, [-1,  flat_size])
 
@@ -76,7 +83,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout3"):
-                    dropout3 = selu.dropout_selu(h3, param.dropoutRate, training=phasePH)
+                    dropout3 = selu.dropout_selu(h3, dropoutRatePH, training=phasePH)
 
                 with tf.name_scope('fc4'):
                     h4 = tf.layers.dense(inputs=dropout3,
@@ -85,7 +92,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout4"):
-                    dropout4 = selu.dropout_selu(h4, param.dropoutRate, training=phasePH)
+                    dropout4 = selu.dropout_selu(h4, dropoutRatePH, training=phasePH)
 
                 with tf.name_scope('fc5'):
                     h5 = tf.layers.dense(inputs=dropout4,
@@ -94,7 +101,7 @@ class Clairvoyante(object):
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout5"):
-                    dropout5 = selu.dropout_selu(h5, param.dropoutRate, training=phasePH)
+                    dropout5 = selu.dropout_selu(h5, dropoutRatePH, training=phasePH)
 
                 with tf.name_scope('Outputs'):
                     Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid)
@@ -134,15 +141,15 @@ class Clairvoyante(object):
         #    tf.image.per_image_standardization(batchX[i])
         loss = 0
         loss, _, summary = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
-                                        feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
-                                                    self.phasePH:True})
+                                              feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
+                                              self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
         return loss, summary
 
     def getLoss(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
         loss = 0
-        loss  = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False})
+        loss  = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
         return loss
 
     def setLearningRate(self, learningRate=None):
@@ -169,7 +176,7 @@ class Clairvoyante(object):
     def predict(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
-        base, varType  = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False})
+        base, varType  = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
         return base, varType
 
     def __del__(self):

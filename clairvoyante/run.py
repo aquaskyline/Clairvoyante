@@ -83,7 +83,6 @@ for i in range(predictBatchSize, len(XArray2), predictBatchSize):
 print >> sys.stderr, "Prediciton time elapsed: ", time.time() - predictStart
 
 print >> sys.stderr, "Model evaluation:"
-print >> sys.stderr
 ed = []
 for pos, predictV, annotateV in zip(np.array(posArray2), ts, YArray2[:,4:]):
     ed.append( (pos, np.argmax(predictV), np.argmax(annotateV)) )
