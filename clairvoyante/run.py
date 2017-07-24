@@ -4,13 +4,14 @@ import numpy as np
 #import clairvoyante as cv
 import utils as utils
 import clairvoyante as cv
+import tensorflow as tf
 
-# load the generate alignment tensors 
+# load the generate alignment tensors
 # we use only variants overlapping with the regions defined in `CHROM21_v.3.3.2_highconf_noinconsistent.bed`
 
 XArray, YArray, posArray = \
-utils.GetTrainingArray("../training/tensor_chr21", 
-                       "../training/var_chr21", 
+utils.GetTrainingArray("../training/tensor_chr21",
+                       "../training/var_chr21",
                        "../testingData/chr21/CHROM21_v.3.3.2_highconf_noinconsistent.bed",
                        "chr21")
 
@@ -21,6 +22,10 @@ print YArray.shape
 m = cv.Clairvoyante()
 m.init()
 
+# op to write logs to Tensorboard
+logs_path = "../training/logs"
+summary_writer = tf.summary.FileWriter(logs_path, graph=tf.get_default_graph())
+
 # training and save the parameters, we train on the first 80% SNP sites and validate on other 20% SNP sites
 batchSize = 500
 validationLosts = []
@@ -29,7 +34,7 @@ XIdx = int(XLen * 0.8)
 epoch = 0
 for i in range(1, int(XIdx/batchSize)*30+1):
     XBatch, YBatch = utils.GetBatch(XArray[:XIdx], YArray[:XIdx], size=batchSize)
-    loss = m.train(XBatch, YBatch)
+    loss, summary = m.train(XBatch, YBatch)
     if i % int(XIdx / batchSize) == 0:
         validationLost = m.getLoss( XArray[XIdx:-1], YArray[XIdx:-1] )
         print >> sys.stderr, i,\
@@ -42,6 +47,9 @@ for i in range(1, int(XIdx/batchSize)*30+1):
             print >> sys.stderr, "New learning rate: %.2e" % nl
         epoch += 1
 
+        # Write summary log
+        summary_writer.add_summary(summary, i)
+
 # pick the parameter set of the smallest validation loss
 validationLosts.sort()
 i = validationLosts[0][1]
@@ -49,8 +57,8 @@ print i
 #m.restoreParameters('../training/parameters/cv.params-%05d' % i)
 
 XArray2, YArray2, posArray2 = \
-utils.GetTrainingArray("../training/tensor_chr22", 
-                       "../training/var_chr22", 
+utils.GetTrainingArray("../training/tensor_chr22",
+                       "../training/var_chr22",
                        "../testingData/chr22/CHROM22_v.3.3.2_highconf_noinconsistent.bed",
                        "chr22")
 
@@ -88,6 +96,6 @@ print
 print "PPV for hom-call (regardless called variant types):", 1.0*sum((ed[:,1]==1) & (ed[:,2]!=4))/sum(ed[:,1]==1)
 print "PPV for hom-call (called variant type = hom):",       1.0*sum((ed[:,1]==1) & (ed[:,2]==1))/sum(ed[:,1]==1)
 print
-print "Recall rate for all calls:", 1.0*sum((ed[:,1]!=4) & (ed[:,2]!=4))/sum(ed[:,2]!=4) 
-print "PPV for all calls:",         1.0*sum((ed[:,1]!=4) & (ed[:,2]!=4))/sum(ed[:,1]!=4) 
+print "Recall rate for all calls:", 1.0*sum((ed[:,1]!=4) & (ed[:,2]!=4))/sum(ed[:,2]!=4)
+print "PPV for all calls:",         1.0*sum((ed[:,1]!=4) & (ed[:,2]!=4))/sum(ed[:,1]!=4)
 

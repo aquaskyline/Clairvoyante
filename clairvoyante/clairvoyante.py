@@ -61,7 +61,7 @@ class Clairvoyante(object):
                                              kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                              padding="same",
                                              activation=selu.selu)
-                
+
                 with tf.name_scope('pool2'):
                     pool2 = tf.layers.max_pooling2d(inputs=conv2,
                                                     pool_size=self.pollSize2,
@@ -108,11 +108,20 @@ class Clairvoyante(object):
 
                 with tf.name_scope("Losses"):
                     loss1 = tf.reduce_sum( tf.pow( Y1 - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]] ), 2) )
-                    loss2 = tf.reduce_sum( tf.nn.softmax_cross_entropy_with_logits( logits=Y2,  
+                    loss2 = tf.reduce_sum( tf.nn.softmax_cross_entropy_with_logits( logits=Y2,
                                                                                     labels=tf.slice( YPH, [0,self.outputShape1[0]],
-                                                                                                          [-1,self.outputShape2[0]] ) ) ) 
+                                                                                                          [-1,self.outputShape2[0]] ) ) )
                     loss = loss1 + loss2
                     self.loss = loss
+
+            # add summaries
+            tf.summary.scalar('learning_rate', learningRatePH)
+            tf.summary.scalar("loss1", loss1)
+            tf.summary.scalar("loss2", loss2)
+            tf.summary.scalar("loss", loss)
+            for var in tf.trainable_variables():
+                tf.summary.histogram(var.op.name, var)
+            self.merged_summary_op = tf.summary.merge_all()
 
             self.training_op = tf.train.AdamOptimizer(learning_rate=learningRatePH).minimize(loss)
             self.init_op = tf.global_variables_initializer()
@@ -127,8 +136,10 @@ class Clairvoyante(object):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
         loss = 0
-        loss, _ = self.session.run( (self.loss, self.training_op), feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal, self.phasePH:True}) 
-        return loss
+        loss, _, summary = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
+                                        feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
+                                                    self.phasePH:True})
+        return loss, summary
 
     def getLoss(self, batchX, batchY):
         #for i in range(len(batchX)):
