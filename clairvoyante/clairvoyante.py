@@ -162,7 +162,7 @@ class Clairvoyante(object):
             self.saver = tf.train.Saver()
             self.saver.restore(self.session, fn)
 
-    def summaryFileWriter(self, logsPath, graph):
+    def summaryFileWriter(self, logsPath):
         summaryWriter = tf.summary.FileWriter(logsPath, graph=tf.get_default_graph())
         return summaryWriter
 

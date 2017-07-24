@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import timeit
+import time
 import param
 
 #import clairvoyante as cv
@@ -29,35 +29,35 @@ m.init()
 
 # op to write logs to Tensorboard
 logsPath = "../training/logs"
-summaryWriter = m.summaryFileWriter(logsPath, graph=tf.get_default_graph())
+summaryWriter = m.summaryFileWriter(logsPath)
 
 # training and save the parameters, we train on the first 80% SNP sites and validate on other 20% SNP sites
 print >> sys.stderr, "Start training ..."
-trainingStart = timeit.timeit()
-batchSize = param.batchSize
+trainingStart = time.time()
+trainBatchSize = param.trainBatchSize
 validationLosts = []
 XLen = len(XArray)
 XIdx = int(XLen * 0.8)
 epoch = 0
-epochStart = timeit.timeit()
-for i in range(1, int(XIdx/batchSize)*30+1):
-    XBatch, YBatch = utils.GetBatch(XArray[:XIdx], YArray[:XIdx], size=batchSize)
+epochStart = time.time()
+for i in range(1, int(XIdx/trainBatchSize)*30+1):
+    XBatch, YBatch = utils.GetBatch(XArray[:XIdx], YArray[:XIdx], size=trainBatchSize)
     loss, summary = m.train(XBatch, YBatch)
-    if i % int(XIdx / batchSize) == 0:
+    if i % int(XIdx / trainBatchSize) == 0:
         validationLost = m.getLoss( XArray[XIdx:-1], YArray[XIdx:-1] )
-        print >> sys.stderr, i, "Training lost:", loss/batchSize, "Validation lost: ", validationLost/(XLen-XIdx)
+        print >> sys.stderr, i, "Training lost:", loss/trainBatchSize, "Validation lost: ", validationLost/(XLen-XIdx)
         m.saveParameters('../training/parameters/cv.params-%05d' % i)
         validationLosts.append( (validationLost, i) )
         if epoch and epoch % 10 == 0:
             print >> sys.stderr, "New learning rate: %.2e" % m.setLearningRate()
         epoch += 1
-        print >> sys.stderr, "Epoch time elapsed: ", timeit.timeit() - epochStart
-        epochStart = timeit.timeit()
+        print >> sys.stderr, "Epoch time elapsed: ", time.time() - epochStart
+        epochStart = time.time()
 
         # Write summary log
         summaryWriter.add_summary(summary, i)
 
-print >> sys.stderr, "Training time elapsed: ", timeit.timeit() - trainingStart
+print >> sys.stderr, "Training time elapsed: ", time.time() - trainingStart
 
 # pick the parameter set of the smallest validation loss
 validationLosts.sort()
@@ -73,14 +73,14 @@ utils.GetTrainingArray("../training/tensor_chr22",
                        "chr22")
 
 print >> sys.stderr, "Predicting ..."
-predictStart = timeit.timeit()
-batchSize = param.predictBatchSize
-bases, ts = m.predict(XArray2[0:batchSize])
-for i in range(batchSize, len(XArray2), batchSize):
-    base, t = m.predict(XArray2[i:i+batchSize])
+predictStart = time.time()
+predictBatchSize = param.predictBatchSize
+bases, ts = m.predict(XArray2[0:predictBatchSize])
+for i in range(predictBatchSize, len(XArray2), predictBatchSize):
+    base, t = m.predict(XArray2[i:i+predictBatchSize])
     bases = np.append(bases, base, 0)
     ts = np.append(ts, t, 0)
-print >> sys.stderr, "Prediciton time elapsed: ", timeit.timeit() - predictStart
+print >> sys.stderr, "Prediciton time elapsed: ", time.time() - predictStart
 
 print >> sys.stderr, "Model evaluation:"
 print >> sys.stderr

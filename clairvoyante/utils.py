@@ -7,7 +7,7 @@ import param
 
 base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
-def GetBatch(X, Y, size=param.batchSize):
+def GetBatch(X, Y, size):
     s = random.randint(0,len(X)-size)
     return X[s:s+size], Y[s:s+size]
 
@@ -27,8 +27,8 @@ def GetAlnArray( tensor_fn ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            for i in range(1, param.matrixNum):
-                x[:,:,i] -= x[:,:,0]
+            #for i in range(1, param.matrixNum):
+            #    x[:,:,i] -= x[:,:,0]
 
             X[pos] = x
 
@@ -111,15 +111,14 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, ctgName ):
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
-            for i in range(1, param.matrixNum):
-                x[:,:,i] -= x[:,:,0]
+            #for i in range(1, param.matrixNum):
+            #    x[:,:,i] -= x[:,:,0]
 
             X[pos] = x
 
             if pos not in Y:
-                baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0.]
+                baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 1.]
                 baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
-                baseVec[8] = 1.
                 Y[pos] = baseVec
 
     allPos = sorted(X.keys())

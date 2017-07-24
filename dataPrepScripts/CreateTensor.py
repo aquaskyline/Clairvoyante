@@ -33,10 +33,12 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
                         #    aln_code[offset][i][1] -= 0.333333
                         #    aln_code[offset][i][3] -= 0.333333
-                    else:
+                    elif refBase == "-":
                         aln_code[offset][ base2num[queryBase] ][1] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
                         #    aln_code[offset][i][1] -= 0.333333
+                    else:
+                      print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 elif queryBase == "-":
                     if refBase != "-":
                         aln_code[offset][ base2num[refBase] ][2] += 1.0
@@ -178,10 +180,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa", 
             help="Reference fasta file input, default: ref.fa")
-    
+
     parser.add_argument('--pi_fn', type=str, default="pileup.out", 
             help="Pile-up count input, default: pileup.out")
-    
+
     parser.add_argument('--tensor_fn', type=str, default="tensor.out", 
             help="Tensor output, default: tensor.out")
 
