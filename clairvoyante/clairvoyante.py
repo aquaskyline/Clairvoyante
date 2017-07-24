@@ -11,12 +11,9 @@ class Clairvoyante(object):
                        filterNum = 48,
                        hiddenLayerUnitNumber = 48):
         self.inputShape = inputShape
-        self.outputShape1 = outputShape1
-        self.outputShape2 = outputShape2
-        self.kernelSize1 = kernelSize1
-        self.kernelSize2 = kernelSize2
-        self.pollSize1 = pollSize1
-        self.pollSize2 = pollSize2
+        self.outputShape1 = outputShape1; self.outputShape2 = outputShape2
+        self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2
+        self.pollSize1 = pollSize1; self.pollSize2 = pollSize2
         self.filterNum = filterNum
         self.hiddenLayerUnitNumber = hiddenLayerUnitNumber
         self.learningRateVal = param.initialLearningRate
@@ -164,6 +161,10 @@ class Clairvoyante(object):
         with self.g.as_default():
             self.saver = tf.train.Saver()
             self.saver.restore(self.session, fn)
+
+    def summaryFileWriter(self, logsPath, graph):
+        summaryWriter = tf.summary.FileWriter(logsPath, graph=tf.get_default_graph())
+        return summaryWriter
 
     def predict(self, XArray):
         #for i in range(len(batchX)):
