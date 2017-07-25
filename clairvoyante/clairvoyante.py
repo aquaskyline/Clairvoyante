@@ -90,22 +90,22 @@ class Clairvoyante(object):
                 conv3_flat =  tf.reshape(pool3, [-1,  flat_size])
 
                 with tf.name_scope('fc4'):
-                    h4 = tf.layers.dense(inputs=conv3_flat,
+                    fc4 = tf.layers.dense(inputs=conv3_flat,
                                          units=self.hiddenLayerUnits4,
                                          kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout4"):
-                    dropout4 = selu.dropout_selu(h4, dropoutRatePH, training=phasePH)
+                    dropout4 = selu.dropout_selu(fc4, dropoutRatePH, training=phasePH)
 
                 with tf.name_scope('fc5'):
-                    h5 = tf.layers.dense(inputs=dropout4,
+                    fc5 = tf.layers.dense(inputs=dropout4,
                                          units=self.hiddenLayerUnits5,
                                          kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                          activation=selu.selu)
 
                 with tf.name_scope("dropout5"):
-                    dropout5 = selu.dropout_selu(h5, dropoutRatePH, training=phasePH)
+                    dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH)
 
                 with tf.name_scope('Outputs'):
                     Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid)
