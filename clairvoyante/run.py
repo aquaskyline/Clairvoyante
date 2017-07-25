@@ -37,7 +37,7 @@ trainBatchSize = param.trainBatchSize
 validationLosts = []
 numValItems = int(len(XArray) * 0.1 + 0.499)
 
-c = 0; maxLearningRateSwitch = 3
+c = 0; maxLearningRateSwitch = 5
 epochStart = time.time()
 for i in range(1, 1 + int(param.maxEpoch * len(XArray) / trainBatchSize + 0.499)):
     XBatch, YBatch = utils.GetBatch(XArray, YArray, size=trainBatchSize)
@@ -114,7 +114,7 @@ for i in range(predictBatchSize, len(XArray2), predictBatchSize):
     base, t = m.predict(XArray2[i:i+predictBatchSize])
     bases = np.append(bases, base, 0)
     ts = np.append(ts, t, 0)
-print >> sys.stderr, "Prediciton time elapsed: %.2f s" % time.time() - predictStart
+print >> sys.stderr, "Prediciton time elapsed: %.2f s" % (time.time() - predictStart)
 
 print >> sys.stderr, "Model evaluation on chr22 dataset:"
 ed = np.zeros( (5,5), dtype=np.int )
