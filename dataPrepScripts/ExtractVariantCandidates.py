@@ -29,7 +29,7 @@ def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
     else:
         return None
 
-def makeCandidates( args ):
+def MakeCandidates( args ):
 
     bam_fn = args.bam_fn
     pi_fn = args.pi_fn
@@ -139,37 +139,36 @@ def makeCandidates( args ):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="Generate variant candidates using alignments")
 
-    parser = argparse.ArgumentParser(description='Generate variant candidates using alignments')
-
-    parser.add_argument('--bam_fn', type=str, default="input.bam", 
+    parser.add_argument('--bam_fn', type=str, default="input.bam",
             help="Sorted bam file input, default: input.bam")
 
-    parser.add_argument('--ref_fn', type=str, default="ref.fa", 
+    parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: ref.fa")
 
-    parser.add_argument('--pi_fn', type=str, default="pileup.out", 
+    parser.add_argument('--pi_fn', type=str, default="pileup.out",
             help="Pile-up count output, default: pileup.out")
 
-    parser.add_argument('--threshold', type=float, default=0.1, 
-            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: 0.1")
+    parser.add_argument('--threshold', type=float, default=0.125,
+            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: 0.125")
 
-    parser.add_argument('--minCoverage', type=float, default=4, 
+    parser.add_argument('--minCoverage', type=float, default=4,
             help="Minimum coverage required to call a variant, default: 4")
 
-    parser.add_argument('--ctgName', type=str, default="chr17", 
+    parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, defaults: chr17")
 
-    parser.add_argument('--ctgStart', type=int, default=None, 
+    parser.add_argument('--ctgStart', type=int, default=None,
             help="The 1-bsae starting position of the sequence to be processed, defaults: None")
 
-    parser.add_argument('--ctgEnd', type=int, default=None, 
+    parser.add_argument('--ctgEnd', type=int, default=None,
             help="The inclusive ending position of the sequence to be processed, defaults: None")
 
-    parser.add_argument('--samtools', type=str, default="samtools", 
+    parser.add_argument('--samtools', type=str, default="samtools",
             help="Path to the 'samtools', default: samtools")
 
     args = parser.parse_args()
 
-    makeCandidates(args)
+    MakeCandidates(args)
 

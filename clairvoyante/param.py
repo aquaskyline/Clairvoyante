@@ -6,3 +6,4 @@ dropoutRate = 0.05
 initialLearningRate = 0.001
 learningRateDecay = 0.5
 maxEpoch = 500
+parameterOutputPlaceHolder = 6

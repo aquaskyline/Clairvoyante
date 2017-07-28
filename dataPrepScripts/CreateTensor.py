@@ -14,7 +14,7 @@ cigarRe = r"(\d+)([MIDNSHP=X])"
 base2num = dict(zip("ACGT", (0,1,2,3)))
 
 def GenerateTensor(ctgName, alns, center, refSeq):
-    aln_code = np.zeros( (2*param.flankingBaseNum+1, 4, param.matrixNum) )
+    alnCode = np.zeros( (2*param.flankingBaseNum+1, 4, param.matrixNum) )
     for aln in alns:
         for refPos, queryPos, refBase, queryBase in aln:
             if refBase not in ("A", "C", "G", "T"):
@@ -23,42 +23,42 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                 offset = refPos - center + (param.flankingBaseNum+1)
                 if queryBase != "-":
                     if refBase != "-":
-                        aln_code[offset][ base2num[refBase] ][0] += 1.0
-                        aln_code[offset][ base2num[queryBase] ][1] += 1.0
-                        aln_code[offset][ base2num[refBase] ][2] += 1.0
-                        aln_code[offset][ base2num[queryBase] ][3] += 1.0
+                        alnCode[offset][ base2num[refBase] ][0] += 1.0
+                        alnCode[offset][ base2num[queryBase] ][1] += 1.0
+                        alnCode[offset][ base2num[refBase] ][2] += 1.0
+                        alnCode[offset][ base2num[queryBase] ][3] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                        #    aln_code[offset][i][0] -= 0.333333
-                        #    aln_code[offset][i][2] -= 0.333333
+                        #    alnCode[offset][i][0] -= 0.333333
+                        #    alnCode[offset][i][2] -= 0.333333
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    aln_code[offset][i][1] -= 0.333333
-                        #    aln_code[offset][i][3] -= 0.333333
+                        #    alnCode[offset][i][1] -= 0.333333
+                        #    alnCode[offset][i][3] -= 0.333333
                     elif refBase == "-":
-                        aln_code[offset][ base2num[queryBase] ][1] += 1.0
+                        alnCode[offset][ base2num[queryBase] ][1] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    aln_code[offset][i][1] -= 0.333333
+                        #    alnCode[offset][i][1] -= 0.333333
                     else:
                       print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 elif queryBase == "-":
                     if refBase != "-":
-                        aln_code[offset][ base2num[refBase] ][2] += 1.0
+                        alnCode[offset][ base2num[refBase] ][2] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                        #    aln_code[offset][i][2] -= 0.333333
+                        #    alnCode[offset][i][2] -= 0.333333
                     else:
                         print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 else:
                     print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
 
     #for i in range(param.matrixNum):
-    #    aln_code[:,:,i] = preprocessing.normalize(aln_code[:,:,i])
+    #    alnCode[:,:,i] = preprocessing.normalize(alnCode[:,:,i])
 
     outputLine = []
     outputLine.append( "%s %d %s" %  (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum]) )
-    for x in np.reshape(aln_code, (2*param.flankingBaseNum+1)*4*param.matrixNum):
+    for x in np.reshape(alnCode, (2*param.flankingBaseNum+1)*4*param.matrixNum):
         outputLine.append("%0.3f" % x)
     return " ".join(outputLine)
 
-def output_aln_tensor(args):
+def OutputAlnTensor(args):
 
     bam_fn = args.bam_fn
     can_fn = args.can_fn
@@ -173,7 +173,7 @@ def output_aln_tensor(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description='Generate tensors summarizing local alignments from a BAM file and a list of candidate locations' )
+            description="Generate tensors summarizing local alignments from a BAM file and a list of candidate locations" )
 
     parser.add_argument('--bam_fn', type=str, default="input.bam",
             help="Sorted bam file input, default: input.bam")
@@ -201,5 +201,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    output_aln_tensor(args)
+    OutputAlnTensor(args)
 
