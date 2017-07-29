@@ -29,7 +29,7 @@ def TrainAll(args, m):
     # use only variants overlapping with the high confident regions
     logging.info("Loading the training dataset ...")
     XArray, YArray, posArray = \
-    utils.GetTrainingArray("../training/tensor_pi_mul",
+    utils.GetTrainingArray("../training/tensor_mix",
                            "../training/var_mul",
                            "../training/bed")
 
@@ -38,8 +38,8 @@ def TrainAll(args, m):
     logging.info("Output: {}".format(YArray.shape))
 
     # op to write logs to Tensorboard
-    logsPath = "../training/logs"
-    summaryWriter = m.summaryFileWriter(logsPath)
+    if args.olog != None:
+        summaryWriter = m.summaryFileWriter(args.olog)
 
     # training and save the parameters, we train on all variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
@@ -55,27 +55,33 @@ def TrainAll(args, m):
     while i < range(1, 1 + int(param.maxEpoch * len(XArray) / trainBatchSize + 0.499)):
         XBatch, YBatch = utils.GetBatch(XArray, YArray, size=trainBatchSize)
         loss, summary = m.train(XBatch, YBatch)
-        summaryWriter.add_summary(summary, i)
+        if args.olog != None:
+            summaryWriter.add_summary(summary, i)
         if i % int(len(XArray) / trainBatchSize + 0.499) == 0:
             validationLost = m.getLoss( XArray[-numValItems:-1], YArray[-numValItems:-1] )
             logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/trainBatchSize)]))
             validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             flag = 0
-            if c >= 4:
-              if validationLosts[-4][0] - validationLosts[-3][0] > 0:
-                  if validationLosts[-3][0] - validationLosts[-2][0] < 0:
-                      if validationLosts[-2][0] - validationLosts[-1][0] > 0:
-                          flag = 1
-              elif validationLosts[-4][0] - validationLosts[-3][0] < 0:
-                  if validationLosts[-3][0] - validationLosts[-2][0] > 0:
-                      if validationLosts[-2][0] - validationLosts[-1][0] < 0:
-                          flag = 1
+            if c >= 6:
+              if validationLosts[-6][0] - validationLosts[-5][0] > 0:
+                  if validationLosts[-5][0] - validationLosts[-4][0] < 0:
+                      if validationLosts[-4][0] - validationLosts[-3][0] > 0:
+                          if validationLosts[-3][0] - validationLosts[-2][0] < 0:
+                              if validationLosts[-2][0] - validationLosts[-1][0] > 0:
+                                  flag = 1
+              elif validationLosts[-6][0] - validationLosts[-5][0] < 0:
+                  if validationLosts[-5][0] - validationLosts[-4][0] > 0:
+                      if validationLosts[-4][0] - validationLosts[-3][0] < 0:
+                          if validationLosts[-3][0] - validationLosts[-2][0] > 0:
+                              if validationLosts[-2][0] - validationLosts[-1][0] < 0:
+                                  flag = 1
               else:
                   flag = 1
             if flag == 1:
-                parameterOutputPath = "../training/parameters/cv.params-%%0%dd" % param.parameterOutputPlaceHolder
-                m.saveParameters(parameterOutputPath % i)
+                if args.ochk != None:
+                    parameterOutputPath = "%s-%%0%dd" % ( args.ochk, param.parameterOutputPlaceHolder )
+                    m.saveParameters(parameterOutputPath % i)
                 maxLearningRateSwitch -= 1
                 if maxLearningRateSwitch == 0:
                   break
@@ -148,6 +154,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--cont', type=bool, default = False,
             help="If a checkpoint is provided, continue on training the model, default: False")
+
+    parser.add_argument('--ochk', type=str, default = None,
+            help="Prefix for checkpoint outputs at each learning rate change, optional")
+
+    parser.add_argument('--olog', type=str, default = None,
+            help="Prefix for tensorboard log outputs, optional")
 
     args = parser.parse_args()
 

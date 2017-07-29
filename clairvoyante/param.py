@@ -1,6 +1,6 @@
 flankingBaseNum = 16
 matrixNum = 4
-trainBatchSize = 2500
+trainBatchSize = 5000
 predictBatchSize = 10000
 dropoutRate = 0.05
 initialLearningRate = 0.001

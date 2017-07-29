@@ -17,7 +17,9 @@ def GenerateTensor(ctgName, alns, center, refSeq):
     alnCode = np.zeros( (2*param.flankingBaseNum+1, 4, param.matrixNum) )
     for aln in alns:
         for refPos, queryPos, refBase, queryBase in aln:
-            if refBase not in ("A", "C", "G", "T"):
+            if str(refBase) not in "ACGT-":
+                continue
+            if str(queryBase) not in "ACGT-":
                 continue
             if refPos - center >= -(param.flankingBaseNum+1) and refPos - center < param.flankingBaseNum:
                 offset = refPos - center + (param.flankingBaseNum+1)
