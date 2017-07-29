@@ -58,7 +58,7 @@ def TrainAll(args, m):
         summaryWriter.add_summary(summary, i)
         if i % int(len(XArray) / trainBatchSize + 0.499) == 0:
             validationLost = m.getLoss( XArray[-numValItems:-1], YArray[-numValItems:-1] )
-            logging.info(" ".join([i, "Training lost:", loss/trainBatchSize, "Validation lost: ", validationLost/trainBatchSize]))
+            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/trainBatchSize)]))
             validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             flag = 0
