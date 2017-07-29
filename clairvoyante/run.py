@@ -81,8 +81,9 @@ def TrainAll(args, m):
                   break
                 logging.info("New learning rate: %.2e" % m.setLearningRate())
                 c = 0
-            c += 1; i += 1
+            c += 1
             epochStart = time.time()
+        i += 1
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
