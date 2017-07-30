@@ -15,12 +15,7 @@ def Run(args):
     m = cv.Clairvoyante()
     m.init()
 
-    if args.chkpnt_fn != None:
-        m.restoreParameters(args.chkpnt_fn)
-        if args.cont == True:
-            TrainAll(args, m)
-    else:
-        TrainAll(args, m)
+    TrainAll(args, m)
     Test22(args, m)
 
 
@@ -49,9 +44,8 @@ def TrainAll(args, m):
     numValItems = int(len(XArray) * 0.1 + 0.499)
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
 
-    c = 0; maxLearningRateSwitch = 10
+    c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
     epochStart = time.time()
-    i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
     while i < range(1, 1 + int(param.maxEpoch * len(XArray) / trainBatchSize + 0.499)):
         XBatch, YBatch = utils.GetBatch(XArray, YArray, size=trainBatchSize)
         loss, summary = m.train(XBatch, YBatch)
@@ -79,9 +73,6 @@ def TrainAll(args, m):
               else:
                   flag = 1
             if flag == 1:
-                if args.ochk != None:
-                    parameterOutputPath = "%s-%%0%dd" % ( args.ochk, param.parameterOutputPlaceHolder )
-                    m.saveParameters(parameterOutputPath % i)
                 maxLearningRateSwitch -= 1
                 if maxLearningRateSwitch == 0:
                   break
@@ -93,7 +84,7 @@ def TrainAll(args, m):
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
-    # pick the parameter set of the smallest validation loss
+    # show the parameter set with the smallest validation loss
     validationLosts.sort()
     i = validationLosts[0][1]
     logging.info("Best validation lost at batch: %d" % i)
@@ -146,17 +137,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description="Training and testing Clairvoyante using demo dataset" )
 
-    parser.add_argument('--chkpnt_fn', type=str, default = None,
-            help="Input a checkpoint for testing or continue training")
-
     parser.add_argument('--learning_rate', type=float, default = param.initialLearningRate,
             help="Set the initial learning rate, default: %f" % param.initialLearningRate)
-
-    parser.add_argument('--cont', type=bool, default = False,
-            help="If a checkpoint is provided, continue on training the model, default: False")
-
-    parser.add_argument('--ochk', type=str, default = None,
-            help="Prefix for checkpoint outputs at each learning rate change, optional")
 
     parser.add_argument('--olog', type=str, default = None,
             help="Prefix for tensorboard log outputs, optional")
