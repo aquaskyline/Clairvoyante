@@ -16,7 +16,7 @@ def OutputVariant( args ):
             if row[0] != ctgName:
                 continue
             last = row[-1]
-            varType = last.split(":")[0].replace("/","|").split("|")
+            varType = last.split(":")[0].replace("/","|").replace(".","0").split("|")
             p1, p2 = varType
             p1 = int(p1)
             p2 = int(p2)
