@@ -23,8 +23,7 @@ def Run(args):
 def Test(args, m):
     logging.info("Loading the dataset ...")
     total, XArrayCompressed, posArrayCompressed = \
-    utils.GetAlnArray(args.tensor_fn,
-                      args.bed_fn)
+    utils.GetAlnArray(args.tensor_fn)
 
     logging.info("Predicing the dataset ...")
     call_fh = open(args.call_fn, "w")
@@ -46,9 +45,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--tensor_fn', type=str, default = None,
             help="Tensor input")
-
-    parser.add_argument('--bed_fn', type=str, default = None,
-            help="High confident genome regions input in the BED format")
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing or continue training")
