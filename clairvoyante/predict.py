@@ -31,10 +31,11 @@ def Test(args, m):
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
     for i in range(0, total, predictBatchSize):
-        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, i, predictBatchSize, total)
+        XBatch, _, _ = utils.DecompressArray(XArrayCompressed, i, predictBatchSize, total)
+        posBatch, _, _ = utils.DecompressArray(posArrayCompressed, i, predictBatchSize, total)
         base, t = m.predict(XBatch)
-        for j in (len(base)):
-            print >> call_fh, posArray[i+j], np.argmax(base[i+j]), np.argmax(t[i+j])
+        for j in range(len(base)):
+            print >> call_fh, posBatch[j], np.argmax(base[j]), np.argmax(t[j])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
 
