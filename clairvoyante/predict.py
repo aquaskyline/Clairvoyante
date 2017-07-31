@@ -21,46 +21,37 @@ def Run(args):
 
 def Test(args, m):
     logging.info("Loading the dataset ...")
-    XArray, YArray, posArray = \
-    utils.GetTrainingArray(args.tensor_fn,
-                           args.var_fn,
-                           args.bed_fn)
+    XArray, posArray = \
+    utils.GetAlnArray(args.tensor_fn,
+                      args.bed_fn)
 
-    logging.info("Testing on the dataset ...")
+    logging.info("Predicing the dataset ...")
+    call_fh = open(args.call_fn, "w")
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
-    bases, ts = m.predict(XArray[0:predictBatchSize])
-    for i in range(predictBatchSize, len(XArray), predictBatchSize):
+    for i in range(0, len(XArray), predictBatchSize):
         base, t = m.predict(XArray[i:i+predictBatchSize])
-        bases = np.append(bases, base, 0)
-        ts = np.append(ts, t, 0)
+        for j in (len(base)):
+            print >> call_fh, posArray[i+j], np.argmax(base[i+j]), np.argmax(t[i+j])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
-
-    logging.info("Model evaluation on the dataset:")
-    ed = np.zeros( (5,5), dtype=np.int )
-    for predictV, annotateV in zip(ts, YArray[:,4:]):
-        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-
-    for i in range(5):
-        logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description="Predict and compare using Clairvoyante" )
+            description="Predict using Clairvoyante" )
 
     parser.add_argument('--tensor_fn', type=str, default = None,
             help="Tensor input")
-
-    parser.add_argument('--var_fn', type=str, default = None,
-            help="Truth variants list input")
 
     parser.add_argument('--bed_fn', type=str, default = None,
             help="High confident genome regions input in the BED format")
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing or continue training")
+
+    parser.add_argument('--call_fn', type=str, default = None,
+            help="Output variant predictions")
 
     args = parser.parse_args()
 
