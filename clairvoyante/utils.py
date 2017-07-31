@@ -99,6 +99,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
             row = row.strip().split()
             ctgName = row[0]
             pos = int(row[1])
+            if ctgName not in tree:
+                continue
             if len(tree[ctgName].search(pos)) == 0:
                 continue
             key = ctgName + ":" + str(pos)

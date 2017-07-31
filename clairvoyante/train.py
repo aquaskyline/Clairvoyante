@@ -40,12 +40,13 @@ def TrainAll(args, m):
     if args.olog != None:
         summaryWriter = m.summaryFileWriter(args.olog)
 
-    # training and save the parameters, we train on all variant sites and validate on the last 10% variant sites
+    # training and save the parameters, we train on all variant sites and validate on the last 20% variant sites
     logging.info("Start training ...")
     trainingStart = time.time()
     trainBatchSize = param.trainBatchSize
+    predictBatchSize = param.predictBatchSize
     validationLosts = []
-    numValItems = int(len(XArray) * 0.1 + 0.499)
+    numValItems = int(len(XArray) * 0.2 + 0.499)
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
 
     c = 0; maxLearningRateSwitch = 10
@@ -57,7 +58,9 @@ def TrainAll(args, m):
         if args.olog != None:
             summaryWriter.add_summary(summary, i)
         if i % int(len(XArray) / trainBatchSize + 0.499) == 0:
-            validationLost = m.getLoss( XArray[-numValItems:-1], YArray[-numValItems:-1] )
+            validationLost = 0
+            for j in range(len(XArray)-numValItems, len(XArray), predictBatchSize):
+                validationLost += m.getLoss( XArray[j:j+predictBatchSize], YArray[j:j+predictBatchSize] )
             logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/trainBatchSize)]))
             validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
@@ -99,7 +102,6 @@ def TrainAll(args, m):
 
     logging.info("Testing on the training dataset ...")
     predictStart = time.time()
-    predictBatchSize = param.predictBatchSize
     bases, ts = m.predict(XArray[0:predictBatchSize])
     for i in range(predictBatchSize, len(XArray), predictBatchSize):
         base, t = m.predict(XArray[i:i+predictBatchSize])
