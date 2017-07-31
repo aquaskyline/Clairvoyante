@@ -12,6 +12,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     # create a Clairvoyante
     logging.info("Loading model ...")
+    utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
 
@@ -21,7 +22,7 @@ def Run(args):
 
 def Test(args, m):
     logging.info("Loading the dataset ...")
-    XArray, posArray = \
+    total, XArrayCompressed, posArrayCompressed = \
     utils.GetAlnArray(args.tensor_fn,
                       args.bed_fn)
 
@@ -29,8 +30,9 @@ def Test(args, m):
     call_fh = open(args.call_fn, "w")
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
-    for i in range(0, len(XArray), predictBatchSize):
-        base, t = m.predict(XArray[i:i+predictBatchSize])
+    for i in range(0, total, predictBatchSize):
+        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, i, predictBatchSize, total)
+        base, t = m.predict(XBatch)
         for j in (len(base)):
             print >> call_fh, posArray[i+j], np.argmax(base[i+j]), np.argmax(t[i+j])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))

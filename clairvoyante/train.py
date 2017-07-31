@@ -3,6 +3,7 @@ import time
 import argparse
 import param
 import logging
+import pickle
 import numpy as np
 import utils as utils
 import clairvoyante as cv
@@ -12,6 +13,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
+    utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
 
@@ -24,21 +26,24 @@ def Run(args):
 
 
 def TrainAll(args, m):
-    # load the generate alignment tensors
-    # use only variants overlapping with the high confident regions
     logging.info("Loading the training dataset ...")
-    XArray, YArray, posArray = \
-    utils.GetTrainingArray(args.tensor_fn,
-                           args.var_fn,
-                           args.bed_fn)
+    if args.bin_fn != None:
+        with open(args.bin_fn, "rb") as fh:
+            total = pickle.load(fh)
+            XArrayCompressed = pickle.load(fh)
+            YArrayCompressed = pickle.load(fh)
+            posArrayCompressed = pickle.load(fh)
+    else:
+        total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
+        utils.GetTrainingArray(args.tensor_fn,
+                               args.var_fn,
+                               args.bed_fn)
 
-    logging.info("The shapes of training dataset:")
-    logging.info("Input: {}".format(XArray.shape))
-    logging.info("Output: {}".format(YArray.shape))
+    logging.info("The size of training dataset: {}".format(total))
 
     # op to write logs to Tensorboard
-    if args.olog != None:
-        summaryWriter = m.summaryFileWriter(args.olog)
+    if args.olog_dir != None:
+        summaryWriter = m.summaryFileWriter(args.olog_dir)
 
     # training and save the parameters, we train on all variant sites and validate on the last 20% variant sites
     logging.info("Start training ...")
@@ -46,22 +51,27 @@ def TrainAll(args, m):
     trainBatchSize = param.trainBatchSize
     predictBatchSize = param.predictBatchSize
     validationLosts = []
-    numValItems = int(len(XArray) * 0.2 + 0.499)
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
-
-    c = 0; maxLearningRateSwitch = 10
     epochStart = time.time()
+    numValItems = int(total * 0.2 + 0.499)
+    c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
+    datasetPtr = 0
     i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
-    while i < range(1, 1 + int(param.maxEpoch * len(XArray) / trainBatchSize + 0.499)):
-        XBatch, YBatch = utils.GetBatch(XArray, YArray, size=trainBatchSize)
+    while i < (1 + int(param.maxEpoch * total / trainBatchSize + 0.499)):
+        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, total)
+        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, total)
+        if num != num2 or endFlag != endFlag2:
+            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
         loss, summary = m.train(XBatch, YBatch)
-        if args.olog != None:
+        if args.olog_dir != None:
             summaryWriter.add_summary(summary, i)
-        if i % int(len(XArray) / trainBatchSize + 0.499) == 0:
+        if endFlag != 0:
             validationLost = 0
-            for j in range(len(XArray)-numValItems, len(XArray), predictBatchSize):
-                validationLost += m.getLoss( XArray[j:j+predictBatchSize], YArray[j:j+predictBatchSize] )
-            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/trainBatchSize)]))
+            for j in range(0, numValItems, predictBatchSize):
+                XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, numValItems)
+                YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, numValItems)
+                validationLost += m.getLoss( XBatch, YBatch )
+            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
             validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             flag = 0
@@ -81,8 +91,8 @@ def TrainAll(args, m):
               else:
                   flag = 1
             if flag == 1:
-                if args.ochk != None:
-                    parameterOutputPath = "%s-%%0%dd" % ( args.ochk, param.parameterOutputPlaceHolder )
+                if args.ochk_prefix != None:
+                    parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
                     m.saveParameters(parameterOutputPath % i)
                 maxLearningRateSwitch -= 1
                 if maxLearningRateSwitch == 0:
@@ -91,7 +101,9 @@ def TrainAll(args, m):
                 c = 0
             c += 1
             epochStart = time.time()
+            datasetPtr = 0
         i += 1
+        datasetPtr += trainBatchSize
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
@@ -102,25 +114,39 @@ def TrainAll(args, m):
 
     logging.info("Testing on the training dataset ...")
     predictStart = time.time()
-    bases, ts = m.predict(XArray[0:predictBatchSize])
-    for i in range(predictBatchSize, len(XArray), predictBatchSize):
-        base, t = m.predict(XArray[i:i+predictBatchSize])
+    datasetPtr = 0
+    XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+    bases, ts = m.predict(XBatch)
+    datasetPtr += predictBatchSize
+    while datasetPtr < total:
+        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        base, t = m.predict(XBatch)
         bases = np.append(bases, base, 0)
         ts = np.append(ts, t, 0)
+        datasetPtr += predictBatchSize
+        if endFlag != 0:
+            break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     logging.info("Model evaluation on the training dataset:")
-    ed = np.zeros( (5,5), dtype=np.int )
-    for predictV, annotateV in zip(ts, YArray[:,4:]):
-        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
 
-    for i in range(5):
-        logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+    if True:
+        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+        ed = np.zeros( (5,5), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,4:]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+
+        for i in range(5):
+            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
             description="Training Clairvoyante" )
+
+    parser.add_argument('--bin_fn', type=str, default = None,
+            help="Binary tensor input generated by tensor2Bin.py, tensor_fn, var_fn and bed_fn will be ignored")
 
     parser.add_argument('--tensor_fn', type=str, default = None,
             help="Tensor input")
@@ -140,11 +166,11 @@ if __name__ == "__main__":
     parser.add_argument('--cont', type=bool, default = False,
             help="If a checkpoint is provided, continue on training the model, default: False")
 
-    parser.add_argument('--ochk', type=str, default = None,
+    parser.add_argument('--ochk_prefix', type=str, default = None,
             help="Prefix for checkpoint outputs at each learning rate change, optional")
 
-    parser.add_argument('--olog', type=str, default = None,
-            help="Prefix for tensorboard log outputs, optional")
+    parser.add_argument('--olog_dir', type=str, default = None,
+            help="Directory for tensorboard log outputs, optional")
 
     args = parser.parse_args()
 

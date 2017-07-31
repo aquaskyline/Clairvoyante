@@ -4,12 +4,16 @@ import intervaltree
 import numpy as np
 import random
 import param
+import blosc
+import gc
 
 base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
-def GetBatch(X, Y, size):
-    s = random.randint(0,len(X)-size)
-    return X[s:s+size], Y[s:s+size]
+def SetupEnv():
+
+    blosc.set_nthreads(4)
+    gc.enable()
+
 
 def GetAlnArray( tensor_fn ):
 
@@ -35,14 +39,28 @@ def GetAlnArray( tensor_fn ):
 
     allPos = sorted(X.keys())
 
+    XArrayCompressed = []
+    posArrayCompressed = []
     XArray = []
     posArray = []
-    for pos in allPos:
-        XArray.append(X[pos])
-        posArray.append(pos)
-    XArray = np.array(XArray)
+    count = 0
+    total = 0
+    for key in allPos:
+        total += 1
+        XArray.append(X[key])
+        posArray.append(key)
+        count += 1
+        if count == param.bloscBlockSize:
+            XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
+            posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
+            XArray = []
+            posArray = []
+            count = 0
+    if count >= 0:
+          XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
+          posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
 
-    return XArray, posArray
+    return total, XArrayCompressed, posArrayCompressed
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
     tree = {}
@@ -123,15 +141,51 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
     allPos = sorted(X.keys())
     random.shuffle(allPos)
 
+    XArrayCompressed = []
+    YArrayCompressed = []
+    posArrayCompressed = []
     XArray = []
     YArray = []
     posArray = []
+    count = 0
+    total = 0
     for key in allPos:
+        total += 1
         XArray.append(X[key])
         YArray.append(Y[key])
         posArray.append(key)
-    XArray = np.array(XArray)
-    YArray = np.array(YArray)
+        count += 1
+        if count == param.bloscBlockSize:
+            XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
+            YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc'))
+            posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
+            XArray = []
+            YArray = []
+            posArray = []
+            count = 0
+    if count >= 0:
+        XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
+        YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc'))
+        posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
 
-    return XArray, YArray, posArray
+    return total, XArrayCompressed, YArrayCompressed, posArrayCompressed
+
+
+def DecompressArray(array, start, num, maximum):
+    endFlag = 0
+    if start + num >= maximum:
+        num = maximum - start
+        endFlag = 1
+    leftEnd = start % param.bloscBlockSize
+    startingBlock = int(start / param.bloscBlockSize)
+    maximumBlock = int((start+num-1) / param.bloscBlockSize)
+    rt = blosc.unpack_array(array[startingBlock])
+    startingBlock += 1
+    if startingBlock <= maximumBlock:
+        for i in range(startingBlock, (maximumBlock+1)):
+            rt = np.append(rt, blosc.unpack_array(array[i]), 0)
+    if leftEnd != 0 or num % param.bloscBlockSize != 0:
+        rt = rt[leftEnd:(leftEnd+num)]
+
+    return rt, num, endFlag
 

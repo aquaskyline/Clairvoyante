@@ -7,4 +7,5 @@ initialLearningRate = 0.001
 learningRateDecay = 0.5
 maxEpoch = 500
 parameterOutputPlaceHolder = 6
-maxLearningRateSwitch = 8
+maxLearningRateSwitch = 10
+bloscBlockSize = 500 # best equals to trainBatchSize

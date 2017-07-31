@@ -12,6 +12,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
+    utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
 
@@ -20,17 +21,13 @@ def Run(args):
 
 
 def TrainAll(args, m):
-    # load the generate alignment tensors
-    # use only variants overlapping with the high confident regions
     logging.info("Loading the training dataset ...")
-    XArray, YArray, posArray = \
-    utils.GetTrainingArray("../training/tensor_mix",
-                           "../training/var_mul",
+    total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
+    utils.GetTrainingArray("../training/tensor_pi_chr21",
+                           "../training/var_chr21",
                            "../training/bed")
 
-    logging.info("The shapes of training dataset:")
-    logging.info("Input: {}".format(XArray.shape))
-    logging.info("Output: {}".format(YArray.shape))
+    logging.info("The size of training dataset: {}".format(total))
 
     # op to write logs to Tensorboard
     if args.olog != None:
@@ -41,19 +38,26 @@ def TrainAll(args, m):
     trainingStart = time.time()
     trainBatchSize = param.trainBatchSize
     validationLosts = []
-    numValItems = int(len(XArray) * 0.1 + 0.499)
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
-
     c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
     epochStart = time.time()
-    while i < range(1, 1 + int(param.maxEpoch * len(XArray) / trainBatchSize + 0.499)):
-        XBatch, YBatch = utils.GetBatch(XArray, YArray, size=trainBatchSize)
+    datasetPtr = 0
+    numValItems = int(total * 0.1 + 0.499)
+    valXArray, _, _ = utils.DecompressArray(XArrayCompressed, 0, numValItems, total)
+    valYArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, numValItems, total)
+    logging.info("Number of variants for validation: %d" % len(valXArray))
+    i = 1
+    while i < (1 + int(param.maxEpoch * total / trainBatchSize + 0.499)):
+        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, total)
+        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, total)
+        if num != num2 or endFlag != endFlag2:
+            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
         loss, summary = m.train(XBatch, YBatch)
         if args.olog != None:
             summaryWriter.add_summary(summary, i)
-        if i % int(len(XArray) / trainBatchSize + 0.499) == 0:
-            validationLost = m.getLoss( XArray[-numValItems:-1], YArray[-numValItems:-1] )
-            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/trainBatchSize)]))
+        if endFlag != 0:
+            validationLost = m.getLoss( valXArray, valYArray )
+            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
             validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             flag = 0
@@ -80,7 +84,9 @@ def TrainAll(args, m):
                 c = 0
             c += 1
             epochStart = time.time()
+            datasetPtr = 0
         i += 1
+        datasetPtr += trainBatchSize
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
@@ -92,45 +98,62 @@ def TrainAll(args, m):
     logging.info("Testing on the training dataset ...")
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
-    bases, ts = m.predict(XArray[0:predictBatchSize])
-    for i in range(predictBatchSize, len(XArray), predictBatchSize):
-        base, t = m.predict(XArray[i:i+predictBatchSize])
+    datasetPtr = 0
+    XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+    bases, ts = m.predict(XBatch)
+    datasetPtr += predictBatchSize
+    while datasetPtr < total:
+        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        base, t = m.predict(XBatch)
         bases = np.append(bases, base, 0)
         ts = np.append(ts, t, 0)
+        datasetPtr += predictBatchSize
+        if endFlag != 0:
+            break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
-    logging.info("Model evaluation on the training dataset:")
-    ed = np.zeros( (5,5), dtype=np.int )
-    for predictV, annotateV in zip(ts, YArray[:,4:]):
-        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    if True:
+        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+        logging.info("Model evaluation on the training dataset:")
+        ed = np.zeros( (5,5), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,4:]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
 
-    for i in range(5):
-        logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+        for i in range(5):
+            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
 
 def Test22(args, m):
     logging.info("Loading the chr22 dataset ...")
-    XArray2, YArray2, posArray2 = \
+    total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
     utils.GetTrainingArray("../training/tensor_pi_chr22",
                            "../training/var_chr22",
-                           "../testingData/chr22/CHROM22_v.3.3.2_highconf_noinconsistent.bed")
+                           "../training/bed")
 
     logging.info("Testing on the chr22 dataset ...")
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
-    bases, ts = m.predict(XArray2[0:predictBatchSize])
-    for i in range(predictBatchSize, len(XArray2), predictBatchSize):
-        base, t = m.predict(XArray2[i:i+predictBatchSize])
+    datasetPtr = 0
+    XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+    bases, ts = m.predict(XBatch)
+    while datasetPtr < total:
+        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        base, t = m.predict(XBatch)
         bases = np.append(bases, base, 0)
         ts = np.append(ts, t, 0)
+        datasetPtr += predictBatchSize
+        if endFlag != 0:
+            break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
-    logging.info("Model evaluation on the chr22 dataset:")
-    ed = np.zeros( (5,5), dtype=np.int )
-    for predictV, annotateV in zip(ts, YArray2[:,4:]):
-        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    if True:
+        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+        logging.info("Model evaluation on the chr22 dataset:")
+        ed = np.zeros( (5,5), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,4:]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
 
-    for i in range(5):
-        logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+        for i in range(5):
+            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
 
 if __name__ == "__main__":
 
