@@ -19,10 +19,7 @@ def Run(args):
 
     if args.chkpnt_fn != None:
         m.restoreParameters(args.chkpnt_fn)
-        if args.cont == True:
-            TrainAll(args, m)
-    else:
-        TrainAll(args, m)
+    TrainAll(args, m)
 
 
 def TrainAll(args, m):
@@ -129,7 +126,6 @@ def TrainAll(args, m):
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     logging.info("Model evaluation on the training dataset:")
-
     if True:
         YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
         ed = np.zeros( (5,5), dtype=np.int )
@@ -162,9 +158,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--learning_rate', type=float, default = param.initialLearningRate,
             help="Set the initial learning rate, default: %f" % param.initialLearningRate)
-
-    parser.add_argument('--cont', type=bool, default = False,
-            help="If a checkpoint is provided, continue on training the model, default: False")
 
     parser.add_argument('--ochk_prefix', type=str, default = None,
             help="Prefix for checkpoint outputs at each learning rate change, optional")

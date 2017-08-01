@@ -42,6 +42,7 @@ def Test(args, m):
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
     bases, ts = m.predict(XBatch)
+    datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         base, t = m.predict(XBatch)
@@ -52,9 +53,9 @@ def Test(args, m):
             break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
+    logging.info("Model evaluation on the dataset:")
     if True:
         YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-        logging.info("Model evaluation dataset:")
         ed = np.zeros( (5,5), dtype=np.int )
         for predictV, annotateV in zip(ts, YArray[:,4:]):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
@@ -81,7 +82,7 @@ if __name__ == "__main__":
             help="High confident genome regions input in the BED format")
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
-            help="Input a checkpoint for testing or continue training")
+            help="Input a checkpoint for testing")
 
     args = parser.parse_args()
 
