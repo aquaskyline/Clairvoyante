@@ -21,18 +21,13 @@ def Run(args):
 
 
 def Test(args, m):
-    logging.info("Loading the dataset ...")
-    total, XArrayCompressed, posArrayCompressed = \
-    utils.GetAlnArray(args.tensor_fn)
-
     logging.info("Predicing the dataset ...")
     call_fh = open(args.call_fn, "w")
     predictStart = time.time()
-    predictBatchSize = param.predictBatchSize
-    for i in range(0, total, predictBatchSize):
-        XBatch, _, _ = utils.DecompressArray(XArrayCompressed, i, predictBatchSize, total)
-        posBatch, _, _ = utils.DecompressArray(posArrayCompressed, i, predictBatchSize, total)
+    for num, XBatch, posBatch in utils.GetTensor( args.tensor_fn, param.predictBatchSize ):
         base, t = m.predict(XBatch)
+        if num != len(base):
+            sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
         for j in range(len(base)):
             print >> call_fh, posBatch[j], np.argmax(base[j]), np.argmax(t[j])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))

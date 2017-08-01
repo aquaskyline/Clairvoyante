@@ -1,5 +1,7 @@
+import os
+home_dir = os.path.expanduser('~')
 import sys
-sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/lib/python2.7/site-packages/')
+sys.path.append(home_dir+'/miniconda2/lib/python2.7/site-packages')
 import intervaltree
 import numpy as np
 import random
@@ -15,11 +17,11 @@ def SetupEnv():
     gc.enable()
 
 
-def GetAlnArray( tensor_fn ):
-
-    X = {}
-
-    with open( tensor_fn ) as f:
+def GetTensor( tensor_fn, num ):
+        f = open( tensor_fn, "r" )
+        c = 0
+        XArray = []
+        posArray = []
         for row in f: # A variant per row
             row = row.strip().split()
             ctgName = row[0]  # Column 1: sequence name
@@ -35,32 +37,18 @@ def GetAlnArray( tensor_fn ):
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
 
-            X[key] = x
+            XArray.append(x)
+            posArray.append(key)
+            c += 1
 
-    allPos = sorted(X.keys())
+            if c == num:
+                yield c, np.array(XArray), np.array(posArray)
+                c = 0
+                XArray = []
+                posArray = []
 
-    XArrayCompressed = []
-    posArrayCompressed = []
-    XArray = []
-    posArray = []
-    count = 0
-    total = 0
-    for key in allPos:
-        total += 1
-        XArray.append(X[key])
-        posArray.append(key)
-        count += 1
-        if count == param.bloscBlockSize:
-            XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
-            posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
-            XArray = []
-            posArray = []
-            count = 0
-    if count >= 0:
-          XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
-          posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
+        yield c, np.array(XArray), np.array(posArray)
 
-    return total, XArrayCompressed, posArrayCompressed
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
     tree = {}
@@ -171,7 +159,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
     return total, XArrayCompressed, YArrayCompressed, posArrayCompressed
 
 
-def DecompressArray(array, start, num, maximum):
+def DecompressArray( array, start, num, maximum ):
     endFlag = 0
     if start + num >= maximum:
         num = maximum - start

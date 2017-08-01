@@ -1,5 +1,7 @@
+import os
+home_dir = os.path.expanduser('~')
 import sys
-sys.path.append('/home-4/rluo5@jhu.edu/miniconda2/lib/python2.7/site-packages/')
+sys.path.append(home_dir+'/miniconda2/lib/python2.7/site-packages')
 from readfq import readfq
 import argparse
 import os
