@@ -144,31 +144,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate variant candidates using alignments")
 
     parser.add_argument('--bam_fn', type=str, default="input.bam",
-            help="Sorted bam file input, default: input.bam")
+            help="Sorted bam file input, default: %(default)s")
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
-            help="Reference fasta file input, default: ref.fa")
+            help="Reference fasta file input, default: %(default)s")
 
     parser.add_argument('--pi_fn', type=str, default="pileup.out",
-            help="Pile-up count output, default: pileup.out")
+            help="Pile-up count output, default: %(default)s")
 
     parser.add_argument('--threshold', type=float, default=0.125,
-            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: 0.125")
+            help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: %(default)f")
 
     parser.add_argument('--minCoverage', type=float, default=4,
-            help="Minimum coverage required to call a variant, default: 4")
+            help="Minimum coverage required to call a variant, default: %(default)d")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
-            help="The name of sequence to be processed, defaults: chr17")
+            help="The name of sequence to be processed, default: %(default)s")
 
     parser.add_argument('--ctgStart', type=int, default=None,
-            help="The 1-bsae starting position of the sequence to be processed, defaults: None")
+            help="The 1-bsae starting position of the sequence to be processed")
 
     parser.add_argument('--ctgEnd', type=int, default=None,
-            help="The inclusive ending position of the sequence to be processed, defaults: None")
+            help="The inclusive ending position of the sequence to be processed")
 
     parser.add_argument('--samtools', type=str, default="samtools",
-            help="Path to the 'samtools', default: samtools")
+            help="Path to the 'samtools', default: %(default)s")
 
     args = parser.parse_args()
 

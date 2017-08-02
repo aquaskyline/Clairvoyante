@@ -28,13 +28,13 @@ if __name__ == "__main__":
             description="Extract variant type and allele from a Truth dataset" )
 
     parser.add_argument('--vcf_fn', type=str, default="input.vcf",
-            help="Truth vcf file input, default: input.vcf")
+            help="Truth vcf file input, default: %(default)s")
 
     parser.add_argument('--var_fn', type=str, default="var.out",
-            help="Truth variants list output, default: var.out")
+            help="Truth variants list output, default: %(default)s")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
-            help="The name of sequence to be processed, defaults: chr17")
+            help="The name of sequence to be processed, default: %(default)s")
 
     args = parser.parse_args()
 

@@ -174,7 +174,7 @@ class Clairvoyante(object):
             self.saver.restore(self.session, fn)
 
     def summaryFileWriter(self, logsPath):
-        summaryWriter = tf.summary.FileWriter(logsPath, graph=tf.get_default_graph())
+        summaryWriter = tf.summary.FileWriter(logsPath, graph=self.g)
         return summaryWriter
 
     def predict(self, XArray):

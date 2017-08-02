@@ -157,7 +157,7 @@ if __name__ == "__main__":
             help="Input a checkpoint for testing or continue training")
 
     parser.add_argument('--learning_rate', type=float, default = param.initialLearningRate,
-            help="Set the initial learning rate, default: %f" % param.initialLearningRate)
+            help="Set the initial learning rate, default: %(default)s")
 
     parser.add_argument('--ochk_prefix', type=str, default = None,
             help="Prefix for checkpoint outputs at each learning rate change, optional")
