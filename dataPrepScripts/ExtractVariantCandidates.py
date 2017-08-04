@@ -34,7 +34,7 @@ def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
 def MakeCandidates( args ):
 
     bam_fn = args.bam_fn
-    pi_fn = args.pi_fn
+    can_fn = args.can_fn
     threshold = args.threshold
     minCoverage = args.minCoverage
     ctgName = args.ctgName
@@ -62,7 +62,7 @@ def MakeCandidates( args ):
     pileup = {}
     sweep = 0
 
-    pi_fp = open(pi_fn, "w")
+    can_fp = open(can_fn, "w")
 
     for l in p.stdout:
         l = l.strip().split()
@@ -123,7 +123,7 @@ def MakeCandidates( args ):
             out = OutputCandidate(ctgName, sweep, baseCount, refBase, minCoverage, threshold)
             if out != None:
                 totalCount, out_line = out
-                print >> pi_fp, out_line
+                print >> can_fp, out_line
             del pileup[sweep]
             sweep += 1;
 
@@ -136,7 +136,7 @@ def MakeCandidates( args ):
         out = OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold)
         if out != None:
             totalCount, out_line = out
-            print >> pi_fp, out_line
+            print >> can_fp, out_line
 
 
 if __name__ == "__main__":
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
 
-    parser.add_argument('--pi_fn', type=str, default="pileup.out",
+    parser.add_argument('--can_fn', type=str, default="pileup.out",
             help="Pile-up count output, default: %(default)s")
 
     parser.add_argument('--threshold', type=float, default=0.125,

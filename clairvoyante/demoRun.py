@@ -23,7 +23,7 @@ def Run(args):
 def TrainAll(args, m):
     logging.info("Loading the training dataset ...")
     total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
-    utils.GetTrainingArray("../training/tensor_pi_chr21",
+    utils.GetTrainingArray("../training/tensor_can_chr21",
                            "../training/var_chr21",
                            "../training/bed")
 
@@ -125,7 +125,7 @@ def TrainAll(args, m):
 def Test22(args, m):
     logging.info("Loading the chr22 dataset ...")
     total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
-    utils.GetTrainingArray("../training/tensor_pi_chr22",
+    utils.GetTrainingArray("../training/tensor_can_chr22",
                            "../training/var_chr22",
                            "../training/bed")
 
