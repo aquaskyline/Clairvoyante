@@ -58,8 +58,9 @@ def TrainAll(args, m):
         if endFlag != 0:
             validationLost = m.getLoss( valXArray, valYArray )
             logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
-            validationLosts.append( (validationLost, i) )
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
+            validationLosts.append( (validationLost, i) )
+            c += 1
             flag = 0
             if c >= 6:
               if validationLosts[-6][0] - validationLosts[-5][0] > 0:
@@ -82,7 +83,6 @@ def TrainAll(args, m):
                   break
                 logging.info("New learning rate: %.2e" % m.setLearningRate())
                 c = 0
-            c += 1
             epochStart = time.time()
             datasetPtr = 0
         i += 1
