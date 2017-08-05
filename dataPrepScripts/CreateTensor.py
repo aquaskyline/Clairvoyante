@@ -18,7 +18,7 @@ base2num = dict(zip("ACGT", (0,1,2,3)))
 def GenerateTensor(ctgName, alns, center, refSeq):
     alnCode = np.zeros( (2*param.flankingBaseNum+1, 4, param.matrixNum) )
     for aln in alns:
-        for refPos, queryPos, refBase, queryBase in aln:
+        for refPos, queryAdv, refBase, queryBase in aln:
             if str(refBase) not in "ACGT-":
                 continue
             if str(queryBase) not in "ACGT-":
@@ -38,9 +38,9 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                         #    alnCode[offset][i][1] -= 0.333333
                         #    alnCode[offset][i][3] -= 0.333333
                     elif refBase == "-":
-                        alnCode[offset][ base2num[queryBase] ][1] += 1.0
+                        alnCode[offset+queryAdv][ base2num[queryBase] ][1] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    alnCode[offset][i][1] -= 0.333333
+                        #    alnCode[offset+queryAdv][i][1] -= 0.333333
                     else:
                       print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 elif queryBase == "-":
@@ -133,7 +133,7 @@ def OutputAlnTensor(args):
                         centerToAln.setdefault(rCenter, [])
                         centerToAln[rCenter].append([])
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, queryPos, refSeq[refPos], SEQ[queryPos] ) )
+                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], SEQ[queryPos] ) )
                     if refPos in endToCenter:
                         center = endToCenter[refPos]
                         activeSet.remove(center)
@@ -141,15 +141,17 @@ def OutputAlnTensor(args):
                     queryPos += 1
 
             elif m.group(2) == "I":
+                queryAdv = 0
                 for i in range(advance):
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, queryPos, "-", SEQ[queryPos] ))
+                        centerToAln[center][-1].append( (refPos, queryAdv, "-", SEQ[queryPos] ))
                     queryPos += 1
+                    queryAdv += 1
 
             elif m.group(2) == "D":
                 for i in xrange(advance):
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, queryPos, refSeq[refPos], "-" ))
+                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], "-" ))
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
                         endToCenter[rEnd] = rCenter
