@@ -135,6 +135,7 @@ def Test22(args, m):
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
     bases, ts = m.predict(XBatch)
+    datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         base, t = m.predict(XBatch)
