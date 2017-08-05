@@ -38,6 +38,7 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                         #    alnCode[offset][i][1] -= 0.333333
                         #    alnCode[offset][i][3] -= 0.333333
                     elif refBase == "-":
+                        queryAdv = max(2*param.flankingBaseNum+1, offset+queryAdv) - offset
                         alnCode[offset+queryAdv][ base2num[queryBase] ][1] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
                         #    alnCode[offset+queryAdv][i][1] -= 0.333333
