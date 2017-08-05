@@ -38,10 +38,10 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                         #    alnCode[offset][i][1] -= 0.333333
                         #    alnCode[offset][i][3] -= 0.333333
                     elif refBase == "-":
-                        queryAdv = max(2*param.flankingBaseNum, offset+queryAdv) - offset
-                        alnCode[offset+queryAdv][ base2num[queryBase] ][1] += 1.0
+                        idx = min(offset+queryAdv, 2*param.flankingBaseNum+1-1)
+                        alnCode[idx][ base2num[queryBase] ][1] += 1.0
                         #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    alnCode[offset+queryAdv][i][1] -= 0.333333
+                        #    alnCode[idx][i][1] -= 0.333333
                     else:
                       print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 elif queryBase == "-":
