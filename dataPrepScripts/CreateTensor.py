@@ -1,7 +1,7 @@
 import os
-home_dir = os.path.expanduser('~')
+homeDir = os.path.expanduser('~')
 import sys
-sys.path.append(home_dir+'/miniconda2/lib/python2.7/site-packages')
+sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
 from readfq import readfq
 import argparse
 import os
@@ -127,11 +127,11 @@ def OutputAlnTensor(args):
                 for i in xrange(advance):
                     matches.append( (refPos, SEQ[queryPos]) )
                     if refPos in beginToEnd:
-                        r_end, r_center = beginToEnd[refPos]
-                        endToCenter[r_end] = r_center
-                        activeSet.add(r_center)
-                        centerToAln.setdefault(r_center, [])
-                        centerToAln[r_center].append([])
+                        rEnd, rCenter = beginToEnd[refPos]
+                        endToCenter[rEnd] = rCenter
+                        activeSet.add(rCenter)
+                        centerToAln.setdefault(rCenter, [])
+                        centerToAln[rCenter].append([])
                     for center in list(activeSet):
                         centerToAln[center][-1].append( (refPos, queryPos, refSeq[refPos], SEQ[queryPos] ) )
                     if refPos in endToCenter:
@@ -151,11 +151,11 @@ def OutputAlnTensor(args):
                     for center in list(activeSet):
                         centerToAln[center][-1].append( (refPos, queryPos, refSeq[refPos], "-" ))
                     if refPos in beginToEnd:
-                        r_end, r_center = beginToEnd[refPos]
-                        endToCenter[r_end] = r_center
-                        activeSet.add(r_center)
-                        centerToAln.setdefault(r_center, [])
-                        centerToAln[r_center].append([])
+                        rEnd, rCenter = beginToEnd[refPos]
+                        endToCenter[rEnd] = rCenter
+                        activeSet.add(rCenter)
+                        centerToAln.setdefault(rCenter, [])
+                        centerToAln[rCenter].append([])
                     if refPos in endToCenter:
                         center = endToCenter[refPos]
                         activeSet.remove(center)

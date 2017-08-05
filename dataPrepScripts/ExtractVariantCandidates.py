@@ -1,7 +1,7 @@
 import os
-home_dir = os.path.expanduser('~')
+homeDir = os.path.expanduser('~')
 import sys
-sys.path.append(home_dir+'/miniconda2/lib/python2.7/site-packages')
+sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
 from readfq import readfq
 import argparse
 import os
@@ -81,15 +81,15 @@ def MakeCandidates( args ):
         refPos = POS
         queryPos = 0
 
-        skip_base = 0
-        total_aln_pos = 0
+        skipBase = 0
+        totalAlnPos = 0
         for m in re.finditer(cigarRe, CIGAR):
             advance = int(m.group(1))
-            total_aln_pos += advance
+            totalAlnPos += advance
             if m.group(2)  == "S":
-                skip_base += advance
+                skipBase += advance
 
-        if 1.0 - float(skip_base) / (total_aln_pos + 1) < 0.55: # skip a read less than 55% aligned
+        if 1.0 - float(skipBase) / (totalAlnPos + 1) < 0.55: # skip a read less than 55% aligned
             continue
 
         for m in re.finditer(cigarRe, CIGAR):
@@ -122,8 +122,8 @@ def MakeCandidates( args ):
             refBase = refSeq[sweep]
             out = OutputCandidate(ctgName, sweep, baseCount, refBase, minCoverage, threshold)
             if out != None:
-                totalCount, out_line = out
-                print >> can_fp, out_line
+                totalCount, outline = out
+                print >> can_fp, outline
             del pileup[sweep]
             sweep += 1;
 
@@ -135,8 +135,8 @@ def MakeCandidates( args ):
         refBase = refSeq[pos]
         out = OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold)
         if out != None:
-            totalCount, out_line = out
-            print >> can_fp, out_line
+            totalCount, outline = out
+            print >> can_fp, outline
 
 
 if __name__ == "__main__":
