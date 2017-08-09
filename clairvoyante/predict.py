@@ -5,7 +5,6 @@ import param
 import logging
 import numpy as np
 import utils as utils
-import clairvoyante as cv
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
@@ -13,6 +12,10 @@ def Run(args):
     # create a Clairvoyante
     logging.info("Loading model ...")
     utils.SetupEnv()
+    if args.slim == False:
+        import clairvoyante as cv
+    elif args.slim == True:
+        import clairvoyante_slim as cv
     m = cv.Clairvoyante()
     m.init()
 
@@ -46,6 +49,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--call_fn', type=str, default = None,
             help="Output variant predictions")
+
+    parser.add_argument('--slim', type=bool, default = False,
+            help="Train using the slim version of Clairvoyante, optional")
 
     args = parser.parse_args()
 
