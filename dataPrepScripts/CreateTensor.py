@@ -60,7 +60,8 @@ def GenerateTensor(ctgName, alns, center, refSeq):
     outputLine = []
     outputLine.append( "%s %d %s" %  (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum]) )
     for x in np.reshape(alnCode, (2*param.flankingBaseNum+1)*4*param.matrixNum):
-        outputLine.append("%0.3f" % x)
+        #outputLine.append("%0.3f" % x)
+        outputLine.append("%0.1f" % x)
     return " ".join(outputLine)
 
 def OutputAlnTensor(args):

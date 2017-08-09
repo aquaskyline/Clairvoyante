@@ -42,7 +42,7 @@ def TrainAll(args, m):
     if args.olog_dir != None:
         summaryWriter = m.summaryFileWriter(args.olog_dir)
 
-    # training and save the parameters, we train on all variant sites and validate on the last 20% variant sites
+    # training and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
     trainingStart = time.time()
     trainBatchSize = param.trainBatchSize
@@ -50,13 +50,15 @@ def TrainAll(args, m):
     validationLosts = []
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
     epochStart = time.time()
-    numValItems = int(total * 0.2 + 0.499)
+    trainingTotal = int(total*param.trainingDatasetPercentage)
+    validationStart = trainingTotal + 1
+    numValItems = total - validationStart
     c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
     datasetPtr = 0
     i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
-    while i < (1 + int(param.maxEpoch * total / trainBatchSize + 0.499)):
-        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, total)
-        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, total)
+    while i < (1 + int(param.maxEpoch * trainingTotal / trainBatchSize + 0.499)):
+        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
+        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
         if num != num2 or endFlag != endFlag2:
             sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
         loss, summary = m.train(XBatch, YBatch)
@@ -64,31 +66,22 @@ def TrainAll(args, m):
             summaryWriter.add_summary(summary, i)
         if endFlag != 0:
             validationLost = 0
-            for j in range(0, numValItems, predictBatchSize):
-                XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, numValItems)
-                YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, numValItems)
+            for j in range(validationStart, total, predictBatchSize):
+                XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, total)
+                YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, total)
                 validationLost += m.getLoss( XBatch, YBatch )
             logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             validationLosts.append( (validationLost, i) )
             c += 1
-            flag = 0
+            flipFlop = 0
             if c >= 6:
-              if validationLosts[-6][0] - validationLosts[-5][0] > 0:
-                  if validationLosts[-5][0] - validationLosts[-4][0] < 0:
-                      if validationLosts[-4][0] - validationLosts[-3][0] > 0:
-                          if validationLosts[-3][0] - validationLosts[-2][0] < 0:
-                              if validationLosts[-2][0] - validationLosts[-1][0] > 0:
-                                  flag = 1
-              elif validationLosts[-6][0] - validationLosts[-5][0] < 0:
-                  if validationLosts[-5][0] - validationLosts[-4][0] > 0:
-                      if validationLosts[-4][0] - validationLosts[-3][0] < 0:
-                          if validationLosts[-3][0] - validationLosts[-2][0] > 0:
-                              if validationLosts[-2][0] - validationLosts[-1][0] < 0:
-                                  flag = 1
-              else:
-                  flag = 1
-            if flag == 1:
+              if validationLosts[-6][0] - validationLosts[-5][0] >= 0: flipFlop += 1
+              if validationLosts[-5][0] - validationLosts[-4][0] >= 0: flipFlop += 1
+              if validationLosts[-4][0] - validationLosts[-3][0] >= 0: flipFlop += 1
+              if validationLosts[-3][0] - validationLosts[-2][0] >= 0: flipFlop += 1
+              if validationLosts[-2][0] - validationLosts[-1][0] >= 0: flipFlop += 1
+            if flipFlop >= 2:
                 if args.ochk_prefix != None:
                     parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
                     m.saveParameters(parameterOutputPath % i)

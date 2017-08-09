@@ -144,17 +144,17 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
         posArray.append(key)
         count += 1
         if count == param.bloscBlockSize:
-            XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
-            YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc'))
-            posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
+            XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc', clevel=9, shuffle=2))
+            YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc', clevel=9, shuffle=2))
+            posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc', clevel=9, shuffle=2))
             XArray = []
             YArray = []
             posArray = []
             count = 0
     if count >= 0:
-        XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc'))
-        YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc'))
-        posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc'))
+        XArrayCompressed.append(blosc.pack_array(np.array(XArray), cname='lz4hc', clevel=9, shuffle=2))
+        YArrayCompressed.append(blosc.pack_array(np.array(YArray), cname='lz4hc', clevel=9, shuffle=2))
+        posArrayCompressed.append(blosc.pack_array(np.array(posArray), cname='lz4hc', clevel=9, shuffle=2))
 
     return total, XArrayCompressed, YArrayCompressed, posArrayCompressed
 

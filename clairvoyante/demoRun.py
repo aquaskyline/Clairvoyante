@@ -33,7 +33,7 @@ def TrainAll(args, m):
     if args.olog != None:
         summaryWriter = m.summaryFileWriter(args.olog)
 
-    # training and save the parameters, we train on all variant sites and validate on the last 10% variant sites
+    # training and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
     trainingStart = time.time()
     trainBatchSize = param.trainBatchSize
@@ -42,14 +42,16 @@ def TrainAll(args, m):
     c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
     epochStart = time.time()
     datasetPtr = 0
-    numValItems = int(total * 0.1 + 0.499)
-    valXArray, _, _ = utils.DecompressArray(XArrayCompressed, 0, numValItems, total)
-    valYArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, numValItems, total)
+    trainingTotal = int(total*param.trainingDatasetPercentage)
+    validationStart = trainingTotal + 1
+    numValItems = total - validationStart
+    valXArray, _, _ = utils.DecompressArray(XArrayCompressed, validationStart, numValItems, total)
+    valYArray, _, _ = utils.DecompressArray(YArrayCompressed, validationStart, numValItems, total)
     logging.info("Number of variants for validation: %d" % len(valXArray))
     i = 1
-    while i < (1 + int(param.maxEpoch * total / trainBatchSize + 0.499)):
-        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, total)
-        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, total)
+    while i < (1 + int(param.maxEpoch * trainingTotal / trainBatchSize + 0.499)):
+        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
+        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
         if num != num2 or endFlag != endFlag2:
             sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
         loss, summary = m.train(XBatch, YBatch)
@@ -63,21 +65,12 @@ def TrainAll(args, m):
             c += 1
             flag = 0
             if c >= 6:
-              if validationLosts[-6][0] - validationLosts[-5][0] > 0:
-                  if validationLosts[-5][0] - validationLosts[-4][0] < 0:
-                      if validationLosts[-4][0] - validationLosts[-3][0] > 0:
-                          if validationLosts[-3][0] - validationLosts[-2][0] < 0:
-                              if validationLosts[-2][0] - validationLosts[-1][0] > 0:
-                                  flag = 1
-              elif validationLosts[-6][0] - validationLosts[-5][0] < 0:
-                  if validationLosts[-5][0] - validationLosts[-4][0] > 0:
-                      if validationLosts[-4][0] - validationLosts[-3][0] < 0:
-                          if validationLosts[-3][0] - validationLosts[-2][0] > 0:
-                              if validationLosts[-2][0] - validationLosts[-1][0] < 0:
-                                  flag = 1
-              else:
-                  flag = 1
-            if flag == 1:
+              if validationLosts[-6][0] - validationLosts[-5][0] >= 0: flipFlop += 1
+              if validationLosts[-5][0] - validationLosts[-4][0] >= 0: flipFlop += 1
+              if validationLosts[-4][0] - validationLosts[-3][0] >= 0: flipFlop += 1
+              if validationLosts[-3][0] - validationLosts[-2][0] >= 0: flipFlop += 1
+              if validationLosts[-2][0] - validationLosts[-1][0] >= 0: flipFlop += 1
+            if flipFlop >= 2:
                 maxLearningRateSwitch -= 1
                 if maxLearningRateSwitch == 0:
                   break
