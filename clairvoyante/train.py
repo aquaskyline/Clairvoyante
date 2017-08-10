@@ -79,12 +79,12 @@ def TrainAll(args, m):
             c += 1
             flipFlop = 0
             if c >= 6:
-              if validationLosts[-6][0] - validationLosts[-5][0] >= 0: flipFlop += 1
-              if validationLosts[-5][0] - validationLosts[-4][0] >= 0: flipFlop += 1
-              if validationLosts[-4][0] - validationLosts[-3][0] >= 0: flipFlop += 1
-              if validationLosts[-3][0] - validationLosts[-2][0] >= 0: flipFlop += 1
-              if validationLosts[-2][0] - validationLosts[-1][0] >= 0: flipFlop += 1
-            if flipFlop >= 2:
+              if validationLosts[-6][0] - validationLosts[-5][0] <= 0: flipFlop += 1
+              if validationLosts[-5][0] - validationLosts[-4][0] <= 0: flipFlop += 1
+              if validationLosts[-4][0] - validationLosts[-3][0] <= 0: flipFlop += 1
+              if validationLosts[-3][0] - validationLosts[-2][0] <= 0: flipFlop += 1
+              if validationLosts[-2][0] - validationLosts[-1][0] <= 0: flipFlop += 1
+            if flipFlop >= 3:
                 if args.ochk_prefix != None:
                     parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
                     m.saveParameters(parameterOutputPath % i)
