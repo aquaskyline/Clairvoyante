@@ -5,27 +5,34 @@ import param
 import logging
 import pickle
 import numpy as np
-import utils as utils
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
+    if args.v1 == True:
+      import utils_v1 as utils
+      if args.slim == True:
+          import clairvoyante_v1_slim as cv
+      else:
+          import clairvoyante_v1 as cv
+    else:
+      import utils_v2 as utils
+      if args.slim == True:
+          import clairvoyante_v2_slim as cv
+      else:
+          import clairvoyante_v2 as cv
     utils.SetupEnv()
-    if args.slim == False:
-        import clairvoyante as cv
-    elif args.slim == True:
-        import clairvoyante_slim as cv
     m = cv.Clairvoyante()
     m.init()
 
     if args.chkpnt_fn != None:
         m.restoreParameters(args.chkpnt_fn)
-    TrainAll(args, m)
+    TrainAll(args, m, utils)
 
 
-def TrainAll(args, m):
+def TrainAll(args, m, utils):
     logging.info("Loading the training dataset ...")
     if args.bin_fn != None:
         with open(args.bin_fn, "rb") as fh:
@@ -56,7 +63,8 @@ def TrainAll(args, m):
     trainingTotal = int(total*param.trainingDatasetPercentage)
     validationStart = trainingTotal + 1
     numValItems = total - validationStart
-    c = 0; maxLearningRateSwitch = param.maxLearningRateSwitch
+    c = 0;
+    maxLearningRateSwitch = param.maxLearningRateSwitch
     datasetPtr = 0
     i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
     while i < (1 + int(param.maxEpoch * trainingTotal / trainBatchSize + 0.499)):
@@ -118,27 +126,74 @@ def TrainAll(args, m):
 
     logging.info("Testing on the training dataset ...")
     predictStart = time.time()
-    datasetPtr = 0
-    XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-    bases, ts = m.predict(XBatch)
-    datasetPtr += predictBatchSize
-    while datasetPtr < total:
-        XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        base, t = m.predict(XBatch)
-        bases = np.append(bases, base, 0)
-        ts = np.append(ts, t, 0)
+    if args.v1 == True:
+        datasetPtr = 0
+        XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        bases, ts = m.predict(XBatch)
         datasetPtr += predictBatchSize
-        if endFlag != 0:
-            break
+        while datasetPtr < total:
+            XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+            base, t = m.predict(XBatch)
+            bases = np.append(bases, base, 0)
+            ts = np.append(ts, t, 0)
+            datasetPtr += predictBatchSize
+            if endFlag != 0:
+                break
+    else:
+        datasetPtr = 0
+        XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        bases, zs, ts, ls = m.predict(XBatch)
+        datasetPtr += predictBatchSize
+        while datasetPtr < total:
+            XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+            base, z, t, l = m.predict(XBatch)
+            bases = np.append(bases, base, 0)
+            zs = np.append(zs, z, 0)
+            ts = np.append(ts, t, 0)
+            ls = np.append(ls, l, 0)
+            datasetPtr += predictBatchSize
+            if endFlag != 0:
+                break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
-    logging.info("Model evaluation on the training dataset:")
-    if True:
-        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-        ed = np.zeros( (5,5), dtype=np.int )
-        for predictV, annotateV in zip(ts, YArray[:,4:]):
+    # Evaluate the trained model
+    YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+    if args.v1 == True:
+        logging.info("Version 1 model, evaluation on base change:")
+        ed = np.zeros( (4,4), dtype=np.int )
+        for predictV, annotateV in zip(bases, YArray[:,0:4]):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-
+        for i in range(4):
+            logging.info("\t".join([str(ed[i][j]) for j in range(4)]))
+        logging.info("Version 1 model, evaluation on variant type:")
+        ed = np.zeros( (5,5), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,4:9]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+        for i in range(5):
+            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+    else:
+        logging.info("Version 2 model, evaluation on base change:")
+        ed = np.zeros( (4,4), dtype=np.int )
+        for predictV, annotateV in zip(bases, YArray[:,0:4]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+        for i in range(4):
+            logging.info("\t".join([str(ed[i][j]) for j in range(4)]))
+        logging.info("Version 2 model, evaluation on Zygosity:")
+        ed = np.zeros( (3,3), dtype=np.int )
+        for predictV, annotateV in zip(zs, YArray[:,4:7]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+        for i in range(3):
+            logging.info("\t".join([str(ed[i][j]) for j in range(3)]))
+        logging.info("Version 2 model, evaluation on variant type:")
+        ed = np.zeros( (3,3), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,7:10]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+        for i in range(3):
+            logging.info("\t".join([str(ed[i][j]) for j in range(3)]))
+        logging.info("Version 2 model, evaluation on indel length:")
+        ed = np.zeros( (5,5), dtype=np.int )
+        for predictV, annotateV in zip(ls, YArray[:,10:15]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
         for i in range(5):
             logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
 
@@ -171,6 +226,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--olog_dir', type=str, default = None,
             help="Directory for tensorboard log outputs, optional")
+
+    parser.add_argument('--v1', type=bool, default = False,
+            help="Use Clairvoyante version 1")
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")

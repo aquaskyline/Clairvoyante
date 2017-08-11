@@ -5,7 +5,7 @@ import param
 class Clairvoyante(object):
 
     def __init__(self, inputShape = (2*param.flankingBaseNum+1, 4, param.matrixNum),
-                       outputShape1 = (4, ), outputShape2 = (5, ),
+                       outputShape1 = (4, ), outputShape2 = (3, ), outputShape3 = (3, ), outputShape4 = (5, ),
                        kernelSize1 = (1, 4), kernelSize2 = (2, 4), kernelSize3 = (3, 4),
                        pollSize1 = (5, 1), pollSize2 = (4, 1), pollSize3 = (3, 1),
                        numFeature1 = 16, numFeature2 = 32, numFeature3 = 48,
@@ -14,7 +14,7 @@ class Clairvoyante(object):
                        learningRateDecay = param.learningRateDecay,
                        dropoutRate = param.dropoutRate):
         self.inputShape = inputShape
-        self.outputShape1 = outputShape1; self.outputShape2 = outputShape2
+        self.outputShape1 = outputShape1; self.outputShape2 = outputShape2; self.outputShape3 = outputShape3; self.outputShape4 = outputShape4
         self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2; self.kernelSize3 = kernelSize3
         self.pollSize1 = pollSize1; self.pollSize2 = pollSize2; self.pollSize3 = pollSize3
         self.numFeature1 = numFeature1; self.numFeature2 = numFeature2; self.numFeature3 = numFeature3
@@ -31,7 +31,7 @@ class Clairvoyante(object):
             XPH = tf.placeholder(tf.float32, [None, self.inputShape[0], self.inputShape[1], self.inputShape[2]], name='XPH')
             self.XPH = XPH
 
-            YPH = tf.placeholder(tf.float32, [None, self.outputShape1[0] + self.outputShape2[0]], name='YPH')
+            YPH = tf.placeholder(tf.float32, [None, self.outputShape1[0] + self.outputShape2[0] + self.outputShape3[0] + self.outputShape4[0]], name='YPH')
             self.YPH = YPH
 
             learningRatePH = tf.placeholder(tf.float32, shape=[], name='learningRatePH')
@@ -103,23 +103,37 @@ class Clairvoyante(object):
 
             dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH, name='dropout5')
 
-            Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='Y1')
-            Y2 = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='Y2')
-            Y3 = tf.nn.softmax(Y2, name='Y3')
-            self.Y1 = Y1
-            self.Y3 = Y3
+            YBaseChange = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChange')
+            YZygosity_1 = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=tf.nn.sigmoid, name='YZygosity_1')
+            YZygosity_2 = tf.nn.softmax(YZygosity_1, name='YZygosity_2')
+            YVarType_1 = tf.layers.dense(inputs=dropout5, units=self.outputShape3[0], activation=tf.nn.sigmoid, name='YVarType_1')
+            YVarType_2 = tf.nn.softmax(YVarType_1, name='YVarType_2')
+            YIndelLength_1 = tf.layers.dense(inputs=dropout5, units=self.outputShape4[0], activation=tf.nn.sigmoid, name='YIndelLength_1')
+            YIndelLength_2 = tf.nn.softmax(YIndelLength_1, name='YIndelLength_2')
+            self.YBaseChange = YBaseChange
+            self.YZygosity_2 = YZygosity_2
+            self.YVarType_2 = YVarType_2
+            self.YIndelLength_2 = YIndelLength_2
 
-            loss1 = tf.reduce_sum( tf.pow( Y1 - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]] ), 2))
-            loss2 = tf.reduce_sum( tf.nn.softmax_cross_entropy_with_logits( logits=Y2,
-                                                                            labels=tf.slice( YPH, [0,self.outputShape1[0]],
-                                                                                                  [-1,self.outputShape2[0]] ) ))
-            loss = loss1 + loss2
+            loss1 = tf.reduce_sum(tf.pow(YBaseChange - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]]), 2))
+            loss2 = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(logits=YZygosity_1,
+                                                                          labels=tf.slice(YPH, [0,self.outputShape1[0]],
+                                                                                               [-1,self.outputShape2[0]])))
+            loss3 = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(logits=YVarType_1,
+                                                                          labels=tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]],
+                                                                                               [-1,self.outputShape3[0]])))
+            loss4 = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(logits=YIndelLength_1,
+                                                                          labels=tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]],
+                                                                                               [-1,self.outputShape4[0]])))
+            loss = loss1 + loss2 + loss3 + loss4
             self.loss = loss
 
             # add summaries
             tf.summary.scalar('learning_rate', learningRatePH)
             tf.summary.scalar("loss1", loss1)
             tf.summary.scalar("loss2", loss2)
+            tf.summary.scalar("loss3", loss3)
+            tf.summary.scalar("loss4", loss4)
             tf.summary.scalar("loss", loss)
             for var in tf.trainable_variables():
                 tf.summary.histogram(var.op.name, var)
@@ -174,8 +188,8 @@ class Clairvoyante(object):
     def predict(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
-        base, varType  = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
-        return base, varType
+        base, zygosity, varType, indelLength = self.session.run( (self.YBaseChange, self.YZygosity_2, self.YVarType_2, self.YIndelLength_2), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
+        return base, zygosity, varType, indelLength
 
     def __del__(self):
         self.session.close()

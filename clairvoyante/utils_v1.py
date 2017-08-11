@@ -29,7 +29,7 @@ def GetTensor( tensor_fn, num ):
             key = ctgName + ":" + str(pos)
             refSeq = row[2]  # Column 3: reference seqeunces
 
-            if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]: # Skip non-ACGT reference bases
+            if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]:
                 continue
 
             x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))

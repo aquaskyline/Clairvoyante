@@ -4,8 +4,8 @@ import argparse
 import param
 import logging
 import numpy as np
-import utils as utils
-import clairvoyante as cv
+import utils_v1 as utils
+import clairvoyante_v1 as cv
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 

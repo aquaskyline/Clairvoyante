@@ -1,17 +1,20 @@
 import sys
 import argparse
 import logging
-import utils as utils
 import pickle
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 def Run(args):
+    if args.v1 == True:
+        import utils_v1 as utils
+    else:
+        import utils_v2 as utils
     utils.SetupEnv()
-    Convert(args)
+    Convert(args, utils)
 
 
-def Convert(args):
+def Convert(args, utils):
     logging.info("Loading the dataset ...")
     total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
     utils.GetTrainingArray(args.tensor_fn,
@@ -42,6 +45,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--bin_fn', type=str, default = None,
             help="Output a binary tensor file")
+
+    parser.add_argument('--v1', type=bool, default = False,
+            help="Use Clairvoyante version 1")
 
     args = parser.parse_args()
 
