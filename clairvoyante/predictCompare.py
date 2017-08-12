@@ -48,6 +48,7 @@ def Test(args, m, utils):
 
     logging.info("Dataset size: %d" % total)
     logging.info("Testing on the dataset ...")
+    predictBatchSize = param.predictBatchSize
     predictStart = time.time()
     if args.v1 == True:
         datasetPtr = 0
@@ -82,11 +83,16 @@ def Test(args, m, utils):
     YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
     if args.v1 == True:
         logging.info("Version 1 model, evaluation on base change:")
-        ed = np.zeros( (4,4), dtype=np.int )
+        allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-        for i in range(4):
-            logging.info("\t".join([str(ed[i][j]) for j in range(4)]))
+            allBaseCount += 1
+            sortPredictV = predictV.argsort()[::-1]
+            if sortPredictV[np.argmax(annotateV)] == 0:
+                top1Count += 1
+                top2Count += 1
+            if sortPredictV[np.argmax(annotateV)] == 1:
+                top2Count += 1
+        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
         logging.info("Version 1 model, evaluation on variant type:")
         ed = np.zeros( (5,5), dtype=np.int )
         for predictV, annotateV in zip(ts, YArray[:,4:9]):
@@ -95,29 +101,34 @@ def Test(args, m, utils):
             logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
     else:
         logging.info("Version 2 model, evaluation on base change:")
-        ed = np.zeros( (4,4), dtype=np.int )
+        allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
+            allBaseCount += 1
+            sortPredictV = predictV.argsort()[::-1]
+            if sortPredictV[np.argmax(annotateV)] == 0:
+                top1Count += 1
+                top2Count += 1
+            if sortPredictV[np.argmax(annotateV)] == 1:
+                top2Count += 1
+        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
+        logging.info("Version 2 model, evaluation on Zygosity:")
+        ed = np.zeros( (2,2), dtype=np.int )
+        for predictV, annotateV in zip(zs, YArray[:,4:6]):
+            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+        for i in range(2):
+            logging.info("\t".join([str(ed[i][j]) for j in range(2)]))
+        logging.info("Version 2 model, evaluation on variant type:")
+        ed = np.zeros( (4,4), dtype=np.int )
+        for predictV, annotateV in zip(ts, YArray[:,6:10]):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
         for i in range(4):
             logging.info("\t".join([str(ed[i][j]) for j in range(4)]))
-        logging.info("Version 2 model, evaluation on Zygosity:")
-        ed = np.zeros( (3,3), dtype=np.int )
-        for predictV, annotateV in zip(zs, YArray[:,4:7]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-        for i in range(3):
-            logging.info("\t".join([str(ed[i][j]) for j in range(3)]))
-        logging.info("Version 2 model, evaluation on variant type:")
-        ed = np.zeros( (3,3), dtype=np.int )
-        for predictV, annotateV in zip(ts, YArray[:,7:10]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-        for i in range(3):
-            logging.info("\t".join([str(ed[i][j]) for j in range(3)]))
         logging.info("Version 2 model, evaluation on indel length:")
-        ed = np.zeros( (5,5), dtype=np.int )
-        for predictV, annotateV in zip(ls, YArray[:,10:15]):
+        ed = np.zeros( (6,6), dtype=np.int )
+        for predictV, annotateV in zip(ls, YArray[:,10:16]):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-        for i in range(5):
-            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+        for i in range(6):
+            logging.info("\t".join([str(ed[i][j]) for j in range(6)]))
 
 
 if __name__ == "__main__":

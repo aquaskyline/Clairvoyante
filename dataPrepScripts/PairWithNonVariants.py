@@ -88,7 +88,8 @@ def Pair(args):
             o1 += 1
     with open(args.tensor_can_fn) as f:
         for row in f:
-            row = row.strip().split()
+            rawRow = row.strip()
+            row = rawRow.split()
             ctgName = row[0]
             pos = int(row[1])
             if ctgName not in tree:
@@ -99,7 +100,7 @@ def Pair(args):
             if key not in d:
                 continue
             if random.random() < r:
-                print >> output_fh, row
+                print >> output_fh, rawRow
             o2 += 1
     logging.info("%.2f/%.2f Truth Variants/Non-variants outputed" % (o1, o2))
 
