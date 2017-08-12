@@ -68,7 +68,7 @@ def Pair(args):
             if len(tree[ctgName].search(pos)) == 0:
                 continue
             key = "-".join([ctgName, str(pos)])
-            if key not in d:
+            if key in d:
                 continue
             c += 1
     logging.info("%d usable non-variant" % c)
@@ -97,7 +97,7 @@ def Pair(args):
             if len(tree[ctgName].search(pos)) == 0:
                 continue
             key = "-".join([ctgName, str(pos)])
-            if key not in d:
+            if key in d:
                 continue
             if random.random() < r:
                 print >> output_fh, rawRow

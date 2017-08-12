@@ -80,6 +80,7 @@ def Test(args, m, utils):
                 break
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
+
     YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
     if args.v1 == True:
         logging.info("Version 1 model, evaluation on base change:")
@@ -87,30 +88,33 @@ def Test(args, m, utils):
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if sortPredictV[np.argmax(annotateV)] == 0:
+            if np.argmax(annotateV) == sortPredictV[0]:
                 top1Count += 1
                 top2Count += 1
-            if sortPredictV[np.argmax(annotateV)] == 1:
+            elif np.argmax(annotateV) == sortPredictV[1]:
                 top2Count += 1
-        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 1 model, evaluation on variant type:")
         ed = np.zeros( (5,5), dtype=np.int )
         for predictV, annotateV in zip(ts, YArray[:,4:9]):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
         for i in range(5):
             logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+        #for b, t, a1, a2 in zip(bases, ts, YArray[:,0:4], YArray[:,4:9]):
+        #    s = b.argsort()[::-1]
+        #    print >> sys.stdout, np.argmax(a1), s[0], s[1], np.argmax(a2), np.argmax(t)
     else:
         logging.info("Version 2 model, evaluation on base change:")
         allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if sortPredictV[np.argmax(annotateV)] == 0:
+            if np.argmax(annotateV) == sortPredictV[0]:
                 top1Count += 1
                 top2Count += 1
-            if sortPredictV[np.argmax(annotateV)] == 1:
+            elif np.argmax(annotateV) == sortPredictV[1]:
                 top2Count += 1
-        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 2 model, evaluation on Zygosity:")
         ed = np.zeros( (2,2), dtype=np.int )
         for predictV, annotateV in zip(zs, YArray[:,4:6]):

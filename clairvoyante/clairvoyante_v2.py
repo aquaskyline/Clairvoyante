@@ -123,7 +123,7 @@ class Clairvoyante(object):
             loss2 = -tf.reduce_sum(tf.log(YZygositySoftmax) * tf.slice(YPH, [0,self.outputShape1[0]], [-1,self.outputShape2[0]]))
             loss3 = -tf.reduce_sum(tf.log(YVarTypeSoftmax) * tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]], [-1,self.outputShape3[0]]))
             loss4 = -tf.reduce_sum(tf.log(YIndelLengthSoftmax) * tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]], [-1,self.outputShape4[0]]))
-            loss = 4./16*loss1 + 2./16*loss2 + 4./16*loss3 + 6./16*loss4
+            loss = loss1 + loss2 + loss3 + loss4
             self.loss = loss
 
             # add summaries

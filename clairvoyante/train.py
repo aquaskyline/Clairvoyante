@@ -164,12 +164,12 @@ def TrainAll(args, m, utils):
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if sortPredictV[np.argmax(annotateV)] == 0:
+            if np.argmax(annotateV) == sortPredictV[0]:
                 top1Count += 1
                 top2Count += 1
-            if sortPredictV[np.argmax(annotateV)] == 1:
+            elif np.argmax(annotateV) == sortPredictV[1]:
                 top2Count += 1
-        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 1 model, evaluation on variant type:")
         ed = np.zeros( (5,5), dtype=np.int )
         for predictV, annotateV in zip(ts, YArray[:,4:9]):
@@ -182,12 +182,12 @@ def TrainAll(args, m, utils):
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if sortPredictV[np.argmax(annotateV)] == 0:
+            if np.argmax(annotateV) == sortPredictV[0]:
                 top1Count += 1
                 top2Count += 1
-            if sortPredictV[np.argmax(annotateV)] == 1:
+            elif np.argmax(annotateV) == sortPredictV[1]:
                 top2Count += 1
-        logging.info("all/top1/top2: %d/%d/%d" % (allBaseCount, top1Count, top2Count))
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 2 model, evaluation on Zygosity:")
         ed = np.zeros( (2,2), dtype=np.int )
         for predictV, annotateV in zip(zs, YArray[:,4:6]):
