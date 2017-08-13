@@ -46,7 +46,7 @@ class Clairvoyante(object):
             conv1 = tf.layers.conv2d(inputs=XPH,
                                      filters=self.numFeature1,
                                      kernel_size=self.kernelSize1,
-                                     kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                     kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv1')
@@ -59,7 +59,7 @@ class Clairvoyante(object):
             conv2 = tf.layers.conv2d(inputs=pool1,
                                      filters=self.numFeature2,
                                      kernel_size=self.kernelSize2,
-                                     kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                     kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv2')
@@ -72,7 +72,7 @@ class Clairvoyante(object):
             conv3 = tf.layers.conv2d(inputs=pool2,
                                      filters=self.numFeature3,
                                      kernel_size=self.kernelSize3,
-                                     kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                     kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv3')
@@ -89,7 +89,7 @@ class Clairvoyante(object):
 
             fc4 = tf.layers.dense(inputs=conv3_flat,
                                  units=self.hiddenLayerUnits4,
-                                 kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                 kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                  activation=selu.selu,
                                  name='fc4')
 
@@ -97,7 +97,7 @@ class Clairvoyante(object):
 
             fc5 = tf.layers.dense(inputs=dropout4,
                                  units=self.hiddenLayerUnits5,
-                                 kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
+                                 kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                  activation=selu.selu,
                                  name='fc5')
 
@@ -120,9 +120,15 @@ class Clairvoyante(object):
             self.YIndelLengthSoftmax = YIndelLengthSoftmax
 
             loss1 = tf.reduce_sum(tf.pow(YBaseChangeSigmoid - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]]), 2))
-            loss2 = -tf.reduce_sum(tf.log(YZygositySoftmax) * tf.slice(YPH, [0,self.outputShape1[0]], [-1,self.outputShape2[0]]))
-            loss3 = -tf.reduce_sum(tf.log(YVarTypeSoftmax) * tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]], [-1,self.outputShape3[0]]))
-            loss4 = -tf.reduce_sum(tf.log(YIndelLengthSoftmax) * tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]], [-1,self.outputShape4[0]]))
+            YZygosityCrossEntropy = tf.nn.log_softmax(YZygosityLogits)\
+                                    * -tf.slice(YPH, [0,self.outputShape1[0]], [-1,self.outputShape2[0]])
+            loss2 = tf.reduce_sum(YZygosityCrossEntropy)
+            YVarTypeCrossEntropy = tf.nn.log_softmax(YVarTypeLogits)\
+                                   * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]], [-1,self.outputShape3[0]])
+            loss3 = tf.reduce_sum(YVarTypeCrossEntropy)
+            YIndelLengthCrossEntropy = tf.nn.log_softmax(YIndelLengthLogits)\
+                                       * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]], [-1,self.outputShape4[0]])
+            loss4 = tf.reduce_sum(YIndelLengthCrossEntropy)
             loss = loss1 + loss2 + loss3 + loss4
             self.loss = loss
 

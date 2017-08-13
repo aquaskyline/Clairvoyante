@@ -101,7 +101,7 @@ def Pair(args):
                 continue
             if random.random() < r:
                 print >> output_fh, rawRow
-            o2 += 1
+                o2 += 1
     logging.info("%.2f/%.2f Truth Variants/Non-variants outputed" % (o1, o2))
 
 

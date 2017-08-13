@@ -11,7 +11,7 @@ from tensorflow.python.framework import tensor_util
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import random_ops
 from tensorflow.python.ops import array_ops
-from tensorflow.python.layers import utils
+from tensorflow.contrib.layers.python.layers import utils
 import tensorflow as tf
 
 # (1) scale inputs to zero mean and unit variance
