@@ -98,7 +98,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
             else: baseVec[7] = 1.  # SNP
 
             varLen = abs(len(row[2])-len(row[3]))
-            if varLen >= 4: baseVec[15] = 1.
+            if varLen > 4: baseVec[15] = 1.
             else: baseVec[10+varLen] = 1.
 
             Y[key] = baseVec
