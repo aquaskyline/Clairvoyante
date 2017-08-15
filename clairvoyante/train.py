@@ -86,23 +86,19 @@ def TrainAll(args, m, utils):
             validationLosts.append( (validationLost, i) )
             c += 1
             flag = 0
-            if c >= 7:
-              if validationLosts[-7][0] - validationLosts[-6][0] < 0:
-                  if validationLosts[-6][0] - validationLosts[-5][0] > 0:
-                      if validationLosts[-5][0] - validationLosts[-4][0] < 0:
-                          if validationLosts[-4][0] - validationLosts[-3][0] > 0:
-                              if validationLosts[-3][0] - validationLosts[-2][0] < 0:
-                                  if validationLosts[-2][0] - validationLosts[-1][0] > 0:
-                                      flag = 1
-              elif validationLosts[-7][0] - validationLosts[-6][0] > 0:
-                  if validationLosts[-6][0] - validationLosts[-5][0] < 0:
-                      if validationLosts[-5][0] - validationLosts[-4][0] > 0:
-                          if validationLosts[-4][0] - validationLosts[-3][0] < 0:
-                              if validationLosts[-3][0] - validationLosts[-2][0] > 0:
-                                  if validationLosts[-2][0] - validationLosts[-1][0] < 0:
-                                      flag = 1
-              else:
-                  flag = 1
+            if c >= 5:
+                if validationLosts[-5][0] - validationLosts[-4][0] < 0:
+                    if validationLosts[-4][0] - validationLosts[-3][0] > 0:
+                        if validationLosts[-3][0] - validationLosts[-2][0] < 0:
+                            if validationLosts[-2][0] - validationLosts[-1][0] > 0:
+                                flag = 1
+                elif validationLosts[-5][0] - validationLosts[-4][0] > 0:
+                    if validationLosts[-4][0] - validationLosts[-3][0] < 0:
+                        if validationLosts[-3][0] - validationLosts[-2][0] > 0:
+                            if validationLosts[-2][0] - validationLosts[-1][0] < 0:
+                                flag = 1
+                else:
+                    flag = 1
             if flag == 1:
                 if args.ochk_prefix != None:
                     parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
