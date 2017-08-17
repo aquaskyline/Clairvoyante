@@ -50,7 +50,7 @@ def Test(args, m, utils):
             #          A   C   G   T   HET HOM INS DEL REF
             #          0   1   2   3   4   5   6   7   8
             for j in range(len(base)):
-                if args.show_ref == False and np.argmax(t[j]) == 4: next
+                if args.show_ref == False and np.argmax(t[j]) == 4: continue
                 sortBase = base[j].argsort()[::-1]
                 base1 = sortBase[0];
                 base2 = sortBase[1];
@@ -68,7 +68,7 @@ def Test(args, m, utils):
             #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
             #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
             for j in range(len(base)):
-                if args.show_ref == False and np.argmax(t[j]) == 0: next
+                if args.show_ref == False and np.argmax(t[j]) == 0: continue
                 sortBase = base[j].argsort()[::-1]
                 base1 = sortBase[0];
                 base2 = sortBase[1];
