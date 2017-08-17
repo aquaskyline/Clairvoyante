@@ -13,15 +13,15 @@ To do variant calling base on trained models, CPU is enough. To train a new mode
 You have a slow way and a quick way to get some demo variant calls. The slow way generates required files from VCF and BAM files. The fast way downloads the required files.
 ### I have plenty of time
 ```
-wget 'https://drive.google.com/file/d/0B4zabL1qoORCTUNTaGdxdTdTS0k/view?usp=sharing'
+wget 'https://www.dropbox.com/s/3ukdlywikir3cx5/testingData.tar.gz'
 tar -xf testingData.tar
 cd dataPrepScripts
 sh PrepDataBeforeDemo.sh
 ```
 ### I need some results now
 ```
-wget 'https://drive.google.com/file/d/0B4zabL1qoORCckNfSXZfdlQ0Sms/view?usp=sharing'
-tar -xf training.tar
+wget 'https://www.dropbox.com/s/twxe6kyv6k3owz4/training.tar.gz'
+tar -zxf training.tar.gz
 ```
 ### Call variants
 ```
