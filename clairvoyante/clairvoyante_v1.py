@@ -28,19 +28,19 @@ class Clairvoyante(object):
 
     def _buildGraph(self):
         with self.g.as_default():
-            XPH = tf.placeholder(tf.float32, [None, self.inputShape[0], self.inputShape[1], self.inputShape[2]])
+            XPH = tf.placeholder(tf.float32, [None, self.inputShape[0], self.inputShape[1], self.inputShape[2]], name='XPH')
             self.XPH = XPH
 
-            YPH = tf.placeholder(tf.float32, [None, self.outputShape1[0] + self.outputShape2[0]])
+            YPH = tf.placeholder(tf.float32, [None, self.outputShape1[0] + self.outputShape2[0]], name='YPH')
             self.YPH = YPH
 
-            learningRatePH = tf.placeholder(tf.float32, shape=[])
+            learningRatePH = tf.placeholder(tf.float32, shape=[], name='learningRatePH')
             self.learningRatePH = learningRatePH
 
-            phasePH = tf.placeholder(tf.bool, shape=[])
+            phasePH = tf.placeholder(tf.bool, shape=[], name='phasePH')
             self.phasePH = phasePH
 
-            dropoutRatePH = tf.placeholder(tf.float32, shape=[])
+            dropoutRatePH = tf.placeholder(tf.float32, shape=[], name='dropoutRatePH')
             self.dropoutRatePH = dropoutRatePH
 
             conv1 = tf.layers.conv2d(inputs=XPH,
@@ -48,33 +48,39 @@ class Clairvoyante(object):
                                      kernel_size=self.kernelSize1,
                                      kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                      padding="same",
-                                     activation=selu.selu)
+                                     activation=selu.selu,
+                                     name='conv1')
 
             pool1 = tf.layers.max_pooling2d(inputs=conv1,
                                             pool_size=self.pollSize1,
-                                            strides=1)
+                                            strides=1,
+                                            name='pool1')
 
             conv2 = tf.layers.conv2d(inputs=pool1,
                                      filters=self.numFeature2,
                                      kernel_size=self.kernelSize2,
                                      kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                      padding="same",
-                                     activation=selu.selu)
+                                     activation=selu.selu,
+                                     name='conv2')
 
             pool2 = tf.layers.max_pooling2d(inputs=conv2,
                                             pool_size=self.pollSize2,
-                                            strides=1)
+                                            strides=1,
+                                            name='pool2')
 
             conv3 = tf.layers.conv2d(inputs=pool2,
                                      filters=self.numFeature3,
                                      kernel_size=self.kernelSize3,
                                      kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
                                      padding="same",
-                                     activation=selu.selu)
+                                     activation=selu.selu,
+                                     name='conv3')
 
             pool3 = tf.layers.max_pooling2d(inputs=conv3,
                                             pool_size=self.pollSize3,
-                                            strides=1)
+                                            strides=1,
+                                            name='pool3')
 
             flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1) - (self.pollSize3[0] - 1))
             flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1) - (self.pollSize3[1] - 1))
@@ -84,20 +90,22 @@ class Clairvoyante(object):
             fc4 = tf.layers.dense(inputs=conv3_flat,
                                  units=self.hiddenLayerUnits4,
                                  kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
-                                 activation=selu.selu)
+                                 activation=selu.selu,
+                                 name='fc4')
 
-            dropout4 = selu.dropout_selu(fc4, dropoutRatePH, training=phasePH)
+            dropout4 = selu.dropout_selu(fc4, dropoutRatePH, training=phasePH, name='dropout4')
 
             fc5 = tf.layers.dense(inputs=dropout4,
                                  units=self.hiddenLayerUnits5,
                                  kernel_initializer = tf.truncated_normal_initializer(stddev=0.01, dtype=tf.float32),
-                                 activation=selu.selu)
+                                 activation=selu.selu,
+                                 name='fc5')
 
-            dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH)
+            dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH, name='dropout5')
 
-            Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid)
-            Y2 = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu)
-            Y3 = tf.nn.softmax(Y2)
+            Y1 = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='Y1')
+            Y2 = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='Y2')
+            Y3 = tf.nn.softmax(Y2, name='Y3')
             self.Y1 = Y1
             self.Y3 = Y3
 
@@ -166,7 +174,7 @@ class Clairvoyante(object):
     def predict(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
-        base, varType  = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
+        base, varType = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
         return base, varType
 
     def __del__(self):
