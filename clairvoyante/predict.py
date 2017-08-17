@@ -6,6 +6,11 @@ import logging
 import numpy as np
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
+num2base = dict(zip((0, 1, 2, 3), "ACGT"))
+v1Type2Name = dict(zip((0, 1, 2, 3, 4), ('HET', 'HOM', 'INS', 'DEL', 'REF')))
+v2Zygosity2Name = dict(zip((0, 1), ('HET', 'HOM')))
+v2Type2Name = dict(zip((0, 1, 2, 3), ('REF', 'SNP', 'INS', 'DEL')))
+v2Length2Name = dict(zip((0, 1, 2, 3, 4, 5), ('0', '1', '2', '3', '4', '>4')))
 
 def Run(args):
     # create a Clairvoyante
@@ -31,16 +36,50 @@ def Run(args):
 
 
 def Test(args, m, utils):
-    logging.info("Predicing the dataset ...")
     call_fh = open(args.call_fn, "w")
+    logging.info("Calling variants ...")
+    predictBatchSize = param.predictBatchSize
     predictStart = time.time()
     for num, XBatch, posBatch in utils.GetTensor( args.tensor_fn, param.predictBatchSize ):
-        base, t = m.predict(XBatch)
-        if num != len(base):
-            sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
-        for j in range(len(base)):
-            print >> call_fh, posBatch[j], np.argmax(base[j]), np.argmax(t[j])
-    logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
+        if args.v1 == True:
+            base, t = m.predict(XBatch)
+            if num != len(base):
+              sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
+            #          --------------  -------------------
+            #          Base chng       Var type
+            #          A   C   G   T   HET HOM INS DEL REF
+            #          0   1   2   3   4   5   6   7   8
+            for j in range(len(base)):
+                if np.argmax(t[j]) == 4: next
+                sortBase = base[j].argsort()[::-1]
+                base1 = sortBase[0];
+                base2 = sortBase[1];
+                varTypeName = v1Type2Name[np.argmax(t[j])];
+                if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
+                else: outBase = "%s%s" % (base1, base1)
+                print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varTypeName
+
+        else:
+            base, z, t, l = m.predict(XBatch)
+            if num != len(base):
+              sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
+            #          --------------  ------  ------------    ------------------
+            #          Base chng       Zygo.   Var type        Var length
+            #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
+            #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+            for j in range(len(base)):
+                if np.argmax(t[j]) == 0: next
+                sortBase = base[j].argsort()[::-1]
+                base1 = sortBase[0];
+                base2 = sortBase[1];
+                if np.argmax(z[j]) == 0: outBase = "%s%s" % (base1, base2)
+                else: outBase = "%s%s" % (base1, base1)
+                varZygosityName = v2Zygosity2Name[np.argmax(z[j])];
+                varTypeName = v2Type2Name[np.argmax(t[j])];
+                varLength = v2Length2Name[np.argmax(l[j])];
+                print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varZygosityName, varTypeName, varLength
+
+    logging.info("Total time elapsed: %.2f s" % (time.time() - predictStart))
 
 
 if __name__ == "__main__":
@@ -62,6 +101,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")
+
+    parser.add_argument('--show_ref', type=bool, default = False,
+            help="Show reference calls, optional")
 
     args = parser.parse_args()
 

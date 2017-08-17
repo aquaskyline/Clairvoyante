@@ -7,6 +7,8 @@ import pickle
 import numpy as np
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
+base2num = dict(zip("ACGT",(0, 1, 2, 3)))
+num2base = dict(zip((0, 1, 2, 3),"ACGT"))
 
 def Run(args):
     # create a Clairvoyante
