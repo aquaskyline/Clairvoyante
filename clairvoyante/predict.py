@@ -52,8 +52,9 @@ def Test(args, m, utils):
             for j in range(len(base)):
                 if args.show_ref == False and np.argmax(t[j]) == 4: continue
                 sortBase = base[j].argsort()[::-1]
-                base1 = sortBase[0];
-                base2 = sortBase[1];
+                base1 = num2base[sortBase[0]];
+                base2 = num2base[sortBase[1]];
+                if(base1 > base2): base1, base2 = base2, base1
                 varTypeName = v1Type2Name[np.argmax(t[j])];
                 if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
                 else: outBase = "%s%s" % (base1, base1)
@@ -70,8 +71,9 @@ def Test(args, m, utils):
             for j in range(len(base)):
                 if args.show_ref == False and np.argmax(t[j]) == 0: continue
                 sortBase = base[j].argsort()[::-1]
-                base1 = sortBase[0];
-                base2 = sortBase[1];
+                base1 = num2base[sortBase[0]];
+                base2 = num2base[sortBase[1]];
+                if(base1 > base2): base1, base2 = base2, base1
                 if np.argmax(z[j]) == 0: outBase = "%s%s" % (base1, base2)
                 else: outBase = "%s%s" % (base1, base1)
                 varZygosityName = v2Zygosity2Name[np.argmax(z[j])];

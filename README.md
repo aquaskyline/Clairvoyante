@@ -32,9 +32,13 @@ less tensor_can_chr21.call
 
 ## Variant call format
 chromosome position genotype zygosity type indeLength
+<br>
 zygosity: HET or HOM
+<br>
 type: SNP, INS or DEL
+<br>
 indelLength: 0, 1, 2, 3, 4, >4 
+<br>
 
 ## Quick start with model training
 ```
@@ -45,7 +49,9 @@ python demoRun.py
 ```
 
 ## About the testing data
-The testing dataset 'testingData.tar' includes 1) the Illumina alignments of chr21 and chr22 from [GIAB Github](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/NHGRI_Illumina300X_novoalign_bams/HG001.GRCh38_full_plus_hs38d1_analysis_set_minus_alts.300x.bam), downsampled to 50x. 2) the truth variants v3.3.2 from [GIAB](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38). GRCh38 was used. 
+The testing dataset 'testingData.tar' includes 1) the Illumina alignments of chr21 and chr22 from [GIAB Github](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/NHGRI_Illumina300X_novoalign_bams/HG001.GRCh38_full_plus_hs38d1_analysis_set_minus_alts.300x.bam), downsampled to 50x. 2) the truth variants v3.3.2 from [GIAB](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38).
+<br>
+GRCh38 was used. 
 
 
 ## Run on MARCC
