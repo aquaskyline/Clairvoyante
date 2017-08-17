@@ -13,4 +13,4 @@ cat ../training/can_chr21 ../training/can_chr22 > ../training/can_mul
 cat ../training/var_chr21 ../training/var_chr22 > ../training/var_mul
 cat ../training/tensor_chr21 ../training/tensor_chr22 > ../training/tensor_can_mul
 cat ../testingData/chr21/chr21.bed ../testingData/chr22/chr22.bed > ../training/bed
-python tensor2Bin.py --tensor_fn ../training/tensor_can_mul --var_fn ../training/var_mul --bed_fn ../training/bed --bin_fn ../training/tensor.bin
+python ../clairvoyante/tensor2Bin.py --tensor_fn ../training/tensor_can_mul --var_fn ../training/var_mul --bed_fn ../training/bed --bin_fn ../training/tensor.bin
