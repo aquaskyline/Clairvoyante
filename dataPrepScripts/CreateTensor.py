@@ -9,7 +9,7 @@ import re
 import shlex
 import subprocess
 import numpy as np
-from sklearn import preprocessing
+#from sklearn import preprocessing
 import param
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
