@@ -9,7 +9,7 @@ import re
 import shlex
 import subprocess
 import numpy as np
-from sklearn import preprocessing
+#from sklearn import preprocessing
 import param
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
@@ -208,6 +208,10 @@ if __name__ == "__main__":
             help="Path to the 'samtools', default: %(default)s")
 
     args = parser.parse_args()
+
+    if len(sys.argv[1:]) == 0:
+        parser.print_help()
+        sys.exit(1)
 
     OutputAlnTensor(args)
 
