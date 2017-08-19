@@ -31,7 +31,7 @@ def Run(args):
     m = cv.Clairvoyante()
     m.init()
 
-    m.restoreParameters(args.chkpnt_fn)
+    m.restoreParameters("./"+args.chkpnt_fn)
     Test(args, m, utils)
 
 
@@ -87,7 +87,7 @@ def Test(args, m, utils):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description="Predict using Clairvoyante" )
+            description="Call variants using a trained Clairvoyante model and tensors of candididate variants" )
 
     parser.add_argument('--tensor_fn', type=str, default = None,
             help="Tensor input")

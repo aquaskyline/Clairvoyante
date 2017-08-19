@@ -145,7 +145,7 @@ class Clairvoyante(object):
             #    tf.summary.histogram(var.op.name, var)
             self.merged_summary_op = tf.summary.merge_all()
 
-            self.training_op = tf.train.AdamOptimizer(learning_rate=learningRatePH).minimize(loss)
+            self.training_op = tf.train.AdamOptimizer(learning_rate=learningRatePH, name='AdamOptimizer').minimize(loss)
             self.init_op = tf.global_variables_initializer()
 
     def init(self):

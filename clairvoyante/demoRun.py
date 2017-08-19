@@ -93,16 +93,19 @@ def TrainAll(args, m):
     predictBatchSize = param.predictBatchSize
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-    bases, ts = m.predict(XBatch)
+    bases = []; ts = []
+    base, t = m.predict(XBatch)
+    bases.append(base); ts.append(t)
     datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         base, t = m.predict(XBatch)
-        bases = np.append(bases, base, 0)
-        ts = np.append(ts, t, 0)
+        bases.append(base); ts.append(t)
         datasetPtr += predictBatchSize
         if endFlag != 0:
             break
+    bases = np.concatenate(bases[:])
+    ts = np.concatenate(ts[:])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     if True:
@@ -127,16 +130,19 @@ def Test22(args, m):
     predictBatchSize = param.predictBatchSize
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-    bases, ts = m.predict(XBatch)
+    bases = []; ts = []
+    base, t = m.predict(XBatch)
+    bases.append(base); ts.append(t)
     datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         base, t = m.predict(XBatch)
-        bases = np.append(bases, base, 0)
-        ts = np.append(ts, t, 0)
+        bases.append(base); ts.append(t)
         datasetPtr += predictBatchSize
         if endFlag != 0:
             break
+    bases = np.concatenate(bases[:])
+    ts = np.concatenate(ts[:])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     if True:

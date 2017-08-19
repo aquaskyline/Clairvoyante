@@ -32,7 +32,7 @@ def Convert(args, utils):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description="Predict and compare using Clairvoyante" )
+            description="Generate a binary format input tensor" )
 
     parser.add_argument('--tensor_fn', type=str, default = None,
             help="Tensor input")

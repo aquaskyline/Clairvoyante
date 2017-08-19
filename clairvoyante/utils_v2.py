@@ -175,13 +175,15 @@ def DecompressArray( array, start, num, maximum ):
     leftEnd = start % param.bloscBlockSize
     startingBlock = int(start / param.bloscBlockSize)
     maximumBlock = int((start+num-1) / param.bloscBlockSize)
-    rt = blosc.unpack_array(array[startingBlock])
+    rt = []
+    rt.append(blosc.unpack_array(array[startingBlock]))
     startingBlock += 1
     if startingBlock <= maximumBlock:
         for i in range(startingBlock, (maximumBlock+1)):
-            rt = np.append(rt, blosc.unpack_array(array[i]), 0)
+            rt.append(blosc.unpack_array(array[i]))
+    nprt = np.concatenate(rt[:])
     if leftEnd != 0 or num % param.bloscBlockSize != 0:
-        rt = rt[leftEnd:(leftEnd+num)]
+        nprt = nprt[leftEnd:(leftEnd+num)]
 
-    return rt, num, endFlag
+    return nprt, num, endFlag
 

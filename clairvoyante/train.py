@@ -28,7 +28,7 @@ def Run(args):
     m.init()
 
     if args.chkpnt_fn != None:
-        m.restoreParameters(args.chkpnt_fn)
+        m.restoreParameters("./"+args.chkpnt_fn)
     TrainAll(args, m, utils)
 
 
@@ -125,31 +125,37 @@ def TrainAll(args, m, utils):
     if args.v1 == True:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        bases, ts = m.predict(XBatch)
+        bases = []; ts = []
+        base, t = m.predict(XBatch)
+        bases.append(base); ts.append(t)
         datasetPtr += predictBatchSize
         while datasetPtr < total:
             XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
             base, t = m.predict(XBatch)
-            bases = np.append(bases, base, 0)
-            ts = np.append(ts, t, 0)
+            bases.append(base); ts.append(t)
             datasetPtr += predictBatchSize
             if endFlag != 0:
                 break
+        bases = np.concatenate(bases[:])
+        ts = np.concatenate(ts[:])
     else:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        bases, zs, ts, ls = m.predict(XBatch)
+        bases = []; zs = []; ts = []; ls = []
+        base, z, t, l = m.predict(XBatch)
+        bases.append(base); zs.append(z); ts.append(t); ls.append(l)
         datasetPtr += predictBatchSize
         while datasetPtr < total:
             XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
             base, z, t, l = m.predict(XBatch)
-            bases = np.append(bases, base, 0)
-            zs = np.append(zs, z, 0)
-            ts = np.append(ts, t, 0)
-            ls = np.append(ls, l, 0)
+            bases.append(base); zs.append(z); ts.append(t); ls.append(l)
             datasetPtr += predictBatchSize
             if endFlag != 0:
                 break
+        bases = np.concatenate(bases[:])
+        zs = np.concatenate(zs[:])
+        ts = np.concatenate(ts[:])
+        ls = np.concatenate(ls[:])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     # Evaluate the trained model
