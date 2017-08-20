@@ -5,6 +5,7 @@ import param
 import logging
 import pickle
 import numpy as np
+from threading import Thread
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
@@ -12,21 +13,23 @@ def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
     if args.v1 == True:
-      import utils_v1 as utils
-      if args.slim == True:
-          import clairvoyante_v1_slim as cv
-      else:
-          import clairvoyante_v1 as cv
+        import utils_v1 as utils
+        if args.slim == True:
+            import clairvoyante_v1_slim as cv
+        else:
+            import clairvoyante_v1 as cv
     else:
-      import utils_v2 as utils
-      if args.slim == True:
-          import clairvoyante_v2_slim as cv
-      else:
-          import clairvoyante_v2 as cv
+        import utils_v2 as utils
+        if args.slim == True:
+            import clairvoyante_v2_slim as cv
+        else:
+            import clairvoyante_v2 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
 
+    if args.ochk_prefix == None:
+        sys.exit("--chk_prefix must be defined in nonstop training mode")
     if args.chkpnt_fn != None:
         m.restoreParameters("./"+args.chkpnt_fn)
     TrainAll(args, m, utils)
@@ -48,47 +51,80 @@ def TrainAll(args, m, utils):
 
     logging.info("The size of training dataset: {}".format(total))
 
-    # op to write logs to Tensorboard
+    # Op to write logs to Tensorboard
     if args.olog_dir != None:
         summaryWriter = m.summaryFileWriter(args.olog_dir)
 
-    # training and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
+    # Train and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
-    trainingStart = time.time()
-    trainBatchSize = param.trainBatchSize
-    predictBatchSize = param.predictBatchSize
-    validationLosts = []
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
-    epochStart = time.time()
+
+    # Model Constants
+    trainingStart = time.time()
     trainingTotal = int(total*param.trainingDatasetPercentage)
     validationStart = trainingTotal + 1
     numValItems = total - validationStart
+    maxLearningRateSwitch = param.maxLearningRateSwitch
+
+    # Variables reset per epoch
+    batchSize = param.trainBatchSize
+    epochStart = time.time()
+    trainLossSum = 0
+    validationLossSum = 0
     datasetPtr = 0
+
     i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
-    while i < (1 + int(param.maxEpoch * trainingTotal / trainBatchSize + 0.499)):
-        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
-        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
-        if num != num2 or endFlag != endFlag2:
-            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
-        loss, summary = m.train(XBatch, YBatch)
-        if args.olog_dir != None:
-            summaryWriter.add_summary(summary, i)
-        if endFlag != 0:
-            validationLost = 0
-            for j in range(validationStart, total, predictBatchSize):
-                XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, total)
-                YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, total)
-                validationLost += m.getLoss( XBatch, YBatch )
-            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
+    XBatch, XNum, XEndFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+    YBatch, YNum, YEndFlag = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+    datasetPtr += XNum
+    while i < param.maxEpoch:
+        threadPool = []
+        if datasetPtr < validationStart:
+            threadPool.append(Thread(target=m.trainNoRT, args=(XBatch, YBatch, )))
+        elif datasetPtr >= validationStart:
+            threadPool.append(Thread(target=m.getLossNoRT, args=(XBatch, YBatch, )))
+
+        for t in threadPool: t.start()
+
+        if datasetPtr < validationStart and (validationStart - datasetPtr) < param.trainBatchSize:
+            batchSize = validationStart - datasetPtr
+        elif datasetPtr < validationStart:
+            batchSize = param.trainBatchSize
+        elif datasetPtr >= validationStart and (datasetPtr % param.predictBatchSize) != 0:
+            batchSize = param.predictBatchSize - (datasetPtr % param.predictBatchSize)
+        elif datasetPtr >= validationStart:
+            batchSize = param.predictBatchSize
+
+        XBatch2, XNum2, XEndFlag2 = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+        YBatch2, YNum2, YEndFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+        if XNum2 != YNum2 or XEndFlag2 != YEndFlag2:
+            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (XNum, YNum))
+
+        for t in threadPool: t.join()
+
+        XBatch = XBatch2; YBatch = YBatch2
+        if datasetPtr < validationStart:
+            trainLossSum += m.trainLossRTVal
+            summary = m.trainSummaryRTVal
+            if args.olog_dir != None:
+                summaryWriter.add_summary(summary, i)
+        elif datasetPtr >= validationStart:
+            validationLossSum += m.getLossLossRTVal
+        datasetPtr += XNum2
+
+        if XEndFlag2 != 0:
+            validationLossSum += m.getLoss( XBatch, YBatch )
+            logging.info(" ".join([str(i), "Training loss:", str(trainLossSum/trainingTotal), "Validation loss: ", str(validationLossSum/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
-            validationLosts.append( (validationLost, i) )
-            if args.ochk_prefix != None:
-                parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
-                m.saveParameters(parameterOutputPath % i)
-            epochStart = time.time()
-            datasetPtr = 0
-        i += 1
-        datasetPtr += trainBatchSize
+            parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
+            m.saveParameters(parameterOutputPath % i)
+
+            # Reset per epoch variables
+            i += 1;
+            trainLossSum = 0; validationLossSum = 0; datasetPtr = 0; epochStart = time.time(); batchSize = param.trainBatchSize
+            XBatch, XNum, XEndFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+            YBatch, YNum, YEndFlag = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+            datasetPtr += XNum
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
@@ -96,7 +132,7 @@ def TrainAll(args, m, utils):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description="Training Clairvoyante nonstop and output checkpoint per epoch" )
+            description="Train Clairvoyante Nonstop" )
 
     parser.add_argument('--bin_fn', type=str, default = None,
             help="Binary tensor input generated by tensor2Bin.py, tensor_fn, var_fn and bed_fn will be ignored")
@@ -129,6 +165,10 @@ if __name__ == "__main__":
             help="Train using the slim version of Clairvoyante, optional")
 
     args = parser.parse_args()
+
+    if len(sys.argv[1:]) == 0:
+        parser.print_help()
+        sys.exit(1)
 
     Run(args)
 

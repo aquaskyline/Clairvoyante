@@ -5,6 +5,7 @@ import param
 import logging
 import pickle
 import numpy as np
+from threading import Thread
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
@@ -12,17 +13,17 @@ def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
     if args.v1 == True:
-      import utils_v1 as utils
-      if args.slim == True:
-          import clairvoyante_v1_slim as cv
-      else:
-          import clairvoyante_v1 as cv
+        import utils_v1 as utils
+        if args.slim == True:
+            import clairvoyante_v1_slim as cv
+        else:
+            import clairvoyante_v1 as cv
     else:
-      import utils_v2 as utils
-      if args.slim == True:
-          import clairvoyante_v2_slim as cv
-      else:
-          import clairvoyante_v2 as cv
+        import utils_v2 as utils
+        if args.slim == True:
+            import clairvoyante_v2_slim as cv
+        else:
+            import clairvoyante_v2 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
@@ -48,54 +49,89 @@ def TrainAll(args, m, utils):
 
     logging.info("The size of training dataset: {}".format(total))
 
-    # op to write logs to Tensorboard
+    # Op to write logs to Tensorboard
     if args.olog_dir != None:
         summaryWriter = m.summaryFileWriter(args.olog_dir)
 
-    # training and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
+    # Train and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
-    trainingStart = time.time()
-    trainBatchSize = param.trainBatchSize
-    predictBatchSize = param.predictBatchSize
-    validationLosts = []
     logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
-    epochStart = time.time()
+    validationLosses = []
+
+    # Model Constants
+    trainingStart = time.time()
     trainingTotal = int(total*param.trainingDatasetPercentage)
     validationStart = trainingTotal + 1
     numValItems = total - validationStart
-    c = 0;
     maxLearningRateSwitch = param.maxLearningRateSwitch
+
+    # Variables reset per epoch
+    batchSize = param.trainBatchSize
+    epochStart = time.time()
+    trainLossSum = 0
+    validationLossSum = 0
     datasetPtr = 0
+
+    # Variables reset per learning rate decay
+    c = 0;
+
     i = 1 if args.chkpnt_fn == None else int(args.chkpnt_fn[-param.parameterOutputPlaceHolder:])+1
-    while i < (1 + int(param.maxEpoch * trainingTotal / trainBatchSize + 0.499)):
-        XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
-        YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, trainBatchSize, trainingTotal)
-        if num != num2 or endFlag != endFlag2:
-            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
-        loss, summary = m.train(XBatch, YBatch)
-        if args.olog_dir != None:
-            summaryWriter.add_summary(summary, i)
-        if endFlag != 0:
-            validationLost = 0
-            for j in range(validationStart, total, predictBatchSize):
-                XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, total)
-                YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, total)
-                validationLost += m.getLoss( XBatch, YBatch )
-            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
+    XBatch, XNum, XEndFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+    YBatch, YNum, YEndFlag = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+    datasetPtr += XNum
+    while i < param.maxEpoch:
+        threadPool = []
+        if datasetPtr < validationStart:
+            threadPool.append(Thread(target=m.trainNoRT, args=(XBatch, YBatch, )))
+        elif datasetPtr >= validationStart:
+            threadPool.append(Thread(target=m.getLossNoRT, args=(XBatch, YBatch, )))
+
+        for t in threadPool: t.start()
+
+        if datasetPtr < validationStart and (validationStart - datasetPtr) < param.trainBatchSize:
+            batchSize = validationStart - datasetPtr
+        elif datasetPtr < validationStart:
+            batchSize = param.trainBatchSize
+        elif datasetPtr >= validationStart and (datasetPtr % param.predictBatchSize) != 0:
+            batchSize = param.predictBatchSize - (datasetPtr % param.predictBatchSize)
+        elif datasetPtr >= validationStart:
+            batchSize = param.predictBatchSize
+
+        XBatch2, XNum2, XEndFlag2 = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+        YBatch2, YNum2, YEndFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+        if XNum2 != YNum2 or XEndFlag2 != YEndFlag2:
+            sys.exit("Inconsistency between decompressed arrays: %d/%d" % (XNum, YNum))
+
+        for t in threadPool: t.join()
+
+        XBatch = XBatch2; YBatch = YBatch2
+        if datasetPtr < validationStart:
+            trainLossSum += m.trainLossRTVal
+            summary = m.trainSummaryRTVal
+            if args.olog_dir != None:
+                summaryWriter.add_summary(summary, i)
+        elif datasetPtr >= validationStart:
+            validationLossSum += m.getLossLossRTVal
+        datasetPtr += XNum2
+
+        if XEndFlag2 != 0:
+            validationLossSum += m.getLoss( XBatch, YBatch )
+            logging.info(" ".join([str(i), "Training loss:", str(trainLossSum/trainingTotal), "Validation loss: ", str(validationLossSum/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
-            validationLosts.append( (validationLost, i) )
+            validationLosses.append( (validationLossSum, i) )
+            # Adaptive learning rate decay
             c += 1
             flag = 0
             if c >= 5:
-                if validationLosts[-5][0] - validationLosts[-4][0] < 0:
-                    if validationLosts[-4][0] - validationLosts[-3][0] > 0:
-                        if validationLosts[-3][0] - validationLosts[-2][0] < 0:
-                            if validationLosts[-2][0] - validationLosts[-1][0] > 0:
+                if validationLosses[-5][0] - validationLosses[-4][0] < 0:
+                    if validationLosses[-4][0] - validationLosses[-3][0] > 0:
+                        if validationLosses[-3][0] - validationLosses[-2][0] < 0:
+                            if validationLosses[-2][0] - validationLosses[-1][0] > 0:
                                 flag = 1
-                elif validationLosts[-5][0] - validationLosts[-4][0] > 0:
-                    if validationLosts[-4][0] - validationLosts[-3][0] < 0:
-                        if validationLosts[-3][0] - validationLosts[-2][0] > 0:
-                            if validationLosts[-2][0] - validationLosts[-1][0] < 0:
+                elif validationLosses[-5][0] - validationLosses[-4][0] > 0:
+                    if validationLosses[-4][0] - validationLosses[-3][0] < 0:
+                        if validationLosses[-3][0] - validationLosses[-2][0] > 0:
+                            if validationLosses[-2][0] - validationLosses[-1][0] < 0:
                                 flag = 1
                 else:
                     flag = 1
@@ -108,20 +144,23 @@ def TrainAll(args, m, utils):
                   break
                 logging.info("New learning rate: %.2e" % m.setLearningRate())
                 c = 0
-            epochStart = time.time()
-            datasetPtr = 0
-        i += 1
-        datasetPtr += trainBatchSize
+            # Reset per epoch variables
+            i += 1
+            trainLossSum = 0; validationLossSum = 0; datasetPtr = 0; epochStart = time.time(); batchSize = param.trainBatchSize
+            XBatch, XNum, XEndFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, batchSize, total)
+            YBatch, YNum, YEndFlag = utils.DecompressArray(YArrayCompressed, datasetPtr, batchSize, total)
+            datasetPtr += XNum
 
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
     # show the parameter set with the smallest validation loss
-    validationLosts.sort()
-    i = validationLosts[0][1]
-    logging.info("Best validation lost at batch: %d" % i)
+    validationLosses.sort()
+    i = validationLosses[0][1]
+    logging.info("Best validation loss at batch: %d" % i)
 
-    logging.info("Testing on the training dataset ...")
+    logging.info("Testing on the training and validation dataset ...")
     predictStart = time.time()
+    predictBatchSize = param.predictBatchSize
     if args.v1 == True:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
@@ -136,8 +175,7 @@ def TrainAll(args, m, utils):
             datasetPtr += predictBatchSize
             if endFlag != 0:
                 break
-        bases = np.concatenate(bases[:])
-        ts = np.concatenate(ts[:])
+        bases = np.concatenate(bases[:]); ts = np.concatenate(ts[:])
     else:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
@@ -152,10 +190,7 @@ def TrainAll(args, m, utils):
             datasetPtr += predictBatchSize
             if endFlag != 0:
                 break
-        bases = np.concatenate(bases[:])
-        zs = np.concatenate(zs[:])
-        ts = np.concatenate(ts[:])
-        ls = np.concatenate(ls[:])
+        bases = np.concatenate(bases[:]); zs = np.concatenate(zs[:]); ts = np.concatenate(ts[:]); ls = np.concatenate(ls[:])
     logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
 
     # Evaluate the trained model
@@ -166,12 +201,10 @@ def TrainAll(args, m, utils):
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if np.argmax(annotateV) == sortPredictV[0]:
-                top1Count += 1
-                top2Count += 1
-            elif np.argmax(annotateV) == sortPredictV[1]:
-                top2Count += 1
-        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
+            if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
+            elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                    (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 1 model, evaluation on variant type:")
         ed = np.zeros( (5,5), dtype=np.int )
         for predictV, annotateV in zip(ts, YArray[:,4:9]):
@@ -184,12 +217,10 @@ def TrainAll(args, m, utils):
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
             allBaseCount += 1
             sortPredictV = predictV.argsort()[::-1]
-            if np.argmax(annotateV) == sortPredictV[0]:
-                top1Count += 1
-                top2Count += 1
-            elif np.argmax(annotateV) == sortPredictV[1]:
-                top2Count += 1
-        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" % (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
+            if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
+            elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
+        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                    (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
         logging.info("Version 2 model, evaluation on Zygosity:")
         ed = np.zeros( (2,2), dtype=np.int )
         for predictV, annotateV in zip(zs, YArray[:,4:6]):
@@ -213,7 +244,7 @@ def TrainAll(args, m, utils):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-            description="Training Clairvoyante" )
+            description="Train Clairvoyante" )
 
     parser.add_argument('--bin_fn', type=str, default = None,
             help="Binary tensor input generated by tensor2Bin.py, tensor_fn, var_fn and bed_fn will be ignored")

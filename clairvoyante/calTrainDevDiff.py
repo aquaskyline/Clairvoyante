@@ -5,21 +5,20 @@ import pickle
 import numpy as np
 from threading import Thread
 
-
 def Run(args):
     # create a Clairvoyante
     if args.v1 == True:
-      import utils_v1 as utils
-      if args.slim == True:
-          import clairvoyante_v1_slim as cv
-      else:
-          import clairvoyante_v1 as cv
+        import utils_v1 as utils
+        if args.slim == True:
+            import clairvoyante_v1_slim as cv
+        else:
+            import clairvoyante_v1 as cv
     else:
-      import utils_v2 as utils
-      if args.slim == True:
-          import clairvoyante_v2_slim as cv
-      else:
-          import clairvoyante_v2 as cv
+        import utils_v2 as utils
+        if args.slim == True:
+            import clairvoyante_v2_slim as cv
+        else:
+            import clairvoyante_v2 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
@@ -58,9 +57,9 @@ def CalcAll(args, m, utils):
             threadPool.append(Thread(target=m.getLossNoRT, args=(XBatch, YBatch, )))
             for t in threadPool: t.start()
             predictBatchSize = param.predictBatchSize
-            if(datasetPtr < validationStart and (validationStart - datasetPtr) < predictBatchSize):
+            if datasetPtr < validationStart and (validationStart - datasetPtr) < predictBatchSize:
                 predictBatchSize = validationStart - datasetPtr
-            elif(datasetPtr >= validationStart and (datasetPtr % predictBatchSize) != 0):
+            elif datasetPtr >= validationStart and (datasetPtr % predictBatchSize) != 0:
                 predictBatchSize = predictBatchSize - (datasetPtr % predictBatchSize)
             #print >> sys.stderr, "%d\t%d\t%d\t%d" % (datasetPtr, predictBatchSize, validationStart, total)
             XBatch2, XNum2, XEndFlag2 = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)

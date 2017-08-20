@@ -59,7 +59,7 @@ def TrainAll(args, m):
             summaryWriter.add_summary(summary, i)
         if endFlag != 0:
             validationLost = m.getLoss( valXArray, valYArray )
-            logging.info(" ".join([str(i), "Training lost:", str(loss/trainBatchSize), "Validation lost: ", str(validationLost/numValItems)]))
+            logging.info(" ".join([str(i), "Training loss:", str(loss/trainBatchSize), "Validation loss: ", str(validationLost/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             validationLosts.append( (validationLost, i) )
             c += 1
@@ -86,7 +86,7 @@ def TrainAll(args, m):
     # show the parameter set with the smallest validation loss
     validationLosts.sort()
     i = validationLosts[0][1]
-    logging.info("Best validation lost at batch: %d" % i)
+    logging.info("Best validation loss at batch: %d" % i)
 
     logging.info("Testing on the training dataset ...")
     predictStart = time.time()

@@ -14,17 +14,17 @@ def Run(args):
     # create a Clairvoyante
     logging.info("Loading model ...")
     if args.v1 == True:
-      import utils_v1 as utils
-      if args.slim == True:
-          import clairvoyante_v1_slim as cv
-      else:
-          import clairvoyante_v1 as cv
+        import utils_v1 as utils
+        if args.slim == True:
+            import clairvoyante_v1_slim as cv
+        else:
+            import clairvoyante_v1 as cv
     else:
-      import utils_v2 as utils
-      if args.slim == True:
-          import clairvoyante_v2_slim as cv
-      else:
-          import clairvoyante_v2 as cv
+        import utils_v2 as utils
+        if args.slim == True:
+            import clairvoyante_v2_slim as cv
+        else:
+            import clairvoyante_v2 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
