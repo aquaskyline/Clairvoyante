@@ -3,6 +3,7 @@ import argparse
 import param
 import pickle
 import numpy as np
+from threading import Thread
 
 
 def Run(args):
@@ -49,23 +50,35 @@ def CalcAll(args, m, utils):
         trainingLost = 0
         validationLost = 0
         i = 1
+        XBatch, XNum, XEndFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+        YBatch, YNum, YEndFlag = utils.DecompressArray(YArrayCompressed, datasetPtr, predictBatchSize, total)
+        datasetPtr += XNum
         while True:
-            XBatch, num, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, trainingTotal)
-            YBatch, num2, endFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, predictBatchSize, trainingTotal)
-            if num != num2 or endFlag != endFlag2:
-                sys.exit("Inconsistency between decompressed arrays: %d/%d" % (num, num2))
-            #print >> sys.stderr, "Tra: %d/%d/%d" % (datasetPtr, num, num2)
-            trainingLost += m.getLoss( XBatch, YBatch )
-            if endFlag != 0:
-                for j in range(validationStart, total, predictBatchSize):
-                    XBatch, _, _ = utils.DecompressArray(XArrayCompressed, j, predictBatchSize, total)
-                    YBatch, _, _ = utils.DecompressArray(YArrayCompressed, j, predictBatchSize, total)
-                    validationLost += m.getLoss( XBatch, YBatch )
-                    #print >> sys.stderr, "Val: %d/%d/%d" % (j, num, num2)
+            threadPool = []
+            threadPool.append(Thread(target=m.getLossNoRT, args=(XBatch, YBatch, )))
+            for t in threadPool: t.start()
+            predictBatchSize = param.predictBatchSize
+            if(datasetPtr < validationStart and (validationStart - datasetPtr) < predictBatchSize):
+                predictBatchSize = validationStart - datasetPtr
+            elif(datasetPtr >= validationStart and (datasetPtr % predictBatchSize) != 0):
+                predictBatchSize = predictBatchSize - (datasetPtr % predictBatchSize)
+            #print >> sys.stderr, "%d\t%d\t%d\t%d" % (datasetPtr, predictBatchSize, validationStart, total)
+            XBatch2, XNum2, XEndFlag2 = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
+            YBatch2, YNum2, YEndFlag2 = utils.DecompressArray(YArrayCompressed, datasetPtr, predictBatchSize, total)
+            if XNum != YNum or XEndFlag != YEndFlag:
+                sys.exit("Inconsistency between decompressed arrays: %d/%d" % (XNum, YNum))
+            for t in threadPool: t.join()
+            XBatch = XBatch2; YBatch = YBatch2
+            if datasetPtr >= validationStart: validationLost += m.getLossLossRTVal
+            else: trainingLost += m.getLossLossRTVal
+            if XEndFlag2!= 0:
+                m.getLossNoRT( XBatch, YBatch )
+                if datasetPtr >= validationStart: validationLost += m.getLossLossRTVal
+                else: trainingLost += m.getLossLossRTVal
                 print >> sys.stderr, "%s\t%.10f\t%.10f" % (n, trainingLost/trainingTotal, validationLost/numValItems)
                 break;
             i += 1
-            datasetPtr += predictBatchSize
+            datasetPtr += XNum2
 
 
 if __name__ == "__main__":

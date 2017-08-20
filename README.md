@@ -5,6 +5,7 @@ Make sure you have Tensorflow >= 1.0.0 installed, the following commands install
 ```
 pip install tensorflow
 pip install blosc
+pip install intervaltree
 python -c 'import tensorflow as tf; print(tf.__version__)'
 ```
 To do variant calling base on trained models, CPU is enough. To train a new model, a high-end GPU along with the GPU version of Tensorflow is needed.
@@ -27,7 +28,7 @@ tar -zxf training.tar.gz
 ### Call variants
 ```
 cd training
-python ../clairvoyante/predict.py --chkpnt_fn ../trainedModels/illumina2/full_round4-less17-031351 --tensor_fn tensor_can_chr21 --call_fn tensor_can_chr21.call
+python ../clairvoyante/callVar.py --chkpnt_fn ../trainedModels/illumina2/full_round4-less17-031351 --tensor_fn tensor_can_chr21 --call_fn tensor_can_chr21.call
 less tensor_can_chr21.call
 ```
 
