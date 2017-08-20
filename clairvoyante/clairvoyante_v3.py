@@ -6,20 +6,22 @@ class Clairvoyante(object):
 
     def __init__(self, inputShape = (2*param.flankingBaseNum+1, 4, param.matrixNum),
                        outputShape1 = (4, ), outputShape2 = (2, ), outputShape3 = (4, ), outputShape4 = (6, ),
-                       kernelSize1 = (1, 4), kernelSize2 = (3, 4), kernelSize3 = (5, 4),
-                       numFeature1 = 8, numFeature2 = 16, numFeature3 = 32,
-                       hiddenLayerUnits4 = 36, hiddenLayerUnits5 = 18,
+                       kernelSize1 = (1, 4), kernelSize2 = (2, 4), kernelSize3 = (3, 4),
+                       pollSize1 = (5, 1), pollSize2 = (4, 1), pollSize3 = (3, 1),
+                       numFeature1 = 16, numFeature2 = 32, numFeature3 = 48,
+                       hiddenLayerUnits4 = 336, hiddenLayerUnits5 = 168,
                        initialLearningRate = param.initialLearningRate,
                        learningRateDecay = param.learningRateDecay,
-                       dropoutRate = param.dropoutRate):
+                       dropoutRateFC4 = param.dropoutRateFC4, dropoutRateFC5 = param.dropoutRateFC5):
         self.inputShape = inputShape
         self.outputShape1 = outputShape1; self.outputShape2 = outputShape2; self.outputShape3 = outputShape3; self.outputShape4 = outputShape4
         self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2; self.kernelSize3 = kernelSize3
+        self.pollSize1 = pollSize1; self.pollSize2 = pollSize2; self.pollSize3 = pollSize3
         self.numFeature1 = numFeature1; self.numFeature2 = numFeature2; self.numFeature3 = numFeature3
         self.hiddenLayerUnits4 = hiddenLayerUnits4; self.hiddenLayerUnits5 = hiddenLayerUnits5
         self.learningRateVal = initialLearningRate
         self.learningRateDecay = learningRateDecay
-        self.dropoutRateVal = dropoutRate
+        self.dropoutRateFC4Val = dropoutRateFC4; self.dropoutRateFC5Val = dropoutRateFC5
         self.g = tf.Graph()
         self._buildGraph()
         self.session = tf.Session(graph = self.g)
@@ -38,8 +40,11 @@ class Clairvoyante(object):
             phasePH = tf.placeholder(tf.bool, shape=[], name='phasePH')
             self.phasePH = phasePH
 
-            dropoutRatePH = tf.placeholder(tf.float32, shape=[], name='dropoutRatePH')
-            self.dropoutRatePH = dropoutRatePH
+            dropoutRateFC4PH = tf.placeholder(tf.float32, shape=[], name='dropoutRateFC4PH')
+            self.dropoutRateFC4PH = dropoutRateFC4PH
+
+            dropoutRateFC5PH = tf.placeholder(tf.float32, shape=[], name='dropoutRateFC5PH')
+            self.dropoutRateFC5PH = dropoutRateFC5PH
 
             conv1 = tf.layers.conv2d(inputs=XPH,
                                      filters=self.numFeature1,
@@ -49,7 +54,12 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv1')
 
-            conv2 = tf.layers.conv2d(inputs=conv1,
+            pool1 = tf.layers.max_pooling2d(inputs=conv1,
+                                            pool_size=self.pollSize1,
+                                            strides=1,
+                                            name='pool1')
+
+            conv2 = tf.layers.conv2d(inputs=pool1,
                                      filters=self.numFeature2,
                                      kernel_size=self.kernelSize2,
                                      kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
@@ -57,7 +67,12 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv2')
 
-            conv3 = tf.layers.conv2d(inputs=conv2,
+            pool2 = tf.layers.max_pooling2d(inputs=conv2,
+                                            pool_size=self.pollSize2,
+                                            strides=1,
+                                            name='pool2')
+
+            conv3 = tf.layers.conv2d(inputs=pool2,
                                      filters=self.numFeature3,
                                      kernel_size=self.kernelSize3,
                                      kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
@@ -65,8 +80,15 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv3')
 
-            flat_size = self.inputShape[0] * self.inputShape[1] * self.numFeature3
-            conv3_flat =  tf.reshape(conv3, [-1,  flat_size])
+            pool3 = tf.layers.max_pooling2d(inputs=conv3,
+                                            pool_size=self.pollSize3,
+                                            strides=1,
+                                            name='pool3')
+
+            flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1) - (self.pollSize3[0] - 1))
+            flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1) - (self.pollSize3[1] - 1))
+            flat_size *= self.numFeature3
+            conv3_flat =  tf.reshape(pool3, [-1,  flat_size])
 
             fc4 = tf.layers.dense(inputs=conv3_flat,
                                  units=self.hiddenLayerUnits4,
@@ -74,7 +96,7 @@ class Clairvoyante(object):
                                  activation=selu.selu,
                                  name='fc4')
 
-            dropout4 = selu.dropout_selu(fc4, dropoutRatePH, training=phasePH, name='dropout4')
+            dropout4 = selu.dropout_selu(fc4, dropoutRateFC4PH, training=phasePH, name='dropout4')
 
             fc5 = tf.layers.dense(inputs=dropout4,
                                  units=self.hiddenLayerUnits5,
@@ -82,34 +104,34 @@ class Clairvoyante(object):
                                  activation=selu.selu,
                                  name='fc5')
 
-            dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH, name='dropout5')
+            dropout5 = selu.dropout_selu(fc5, dropoutRateFC5PH, training=phasePH, name='dropout5')
 
             epsilon = tf.constant(value=1e-10)
             YBaseChangeSigmoid = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChangeSigmoid')
             YZygosityFC = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='YZygosityFC')
-            YZygosityLogits = YZygosityFC + epsilon
+            YZygosityLogits = tf.add(YZygosityFC, epsilon, name='YZygosityLogits')
             YZygositySoftmax = tf.nn.softmax(YZygosityLogits, name='YZygositySoftmax')
             YVarTypeFC = tf.layers.dense(inputs=dropout5, units=self.outputShape3[0], activation=selu.selu, name='YVarTypeFC')
-            YVarTypeLogits = YVarTypeFC + epsilon
+            YVarTypeLogits = tf.add(YVarTypeFC, epsilon, name='YVarTypeLogits')
             YVarTypeSoftmax = tf.nn.softmax(YVarTypeLogits, name='YVarTypeSoftmax')
             YIndelLengthFC = tf.layers.dense(inputs=dropout5, units=self.outputShape4[0], activation=selu.selu, name='YIndelLengthFC')
-            YIndelLengthLogits = YIndelLengthFC + epsilon
+            YIndelLengthLogits = tf.add(YIndelLengthFC, epsilon, name='YIndelLengthLogits')
             YIndelLengthSoftmax = tf.nn.softmax(YIndelLengthLogits, name='YIndelLengthSoftmax')
             self.YBaseChangeSigmoid = YBaseChangeSigmoid
             self.YZygositySoftmax = YZygositySoftmax
             self.YVarTypeSoftmax = YVarTypeSoftmax
             self.YIndelLengthSoftmax = YIndelLengthSoftmax
 
-            loss1 = tf.reduce_sum(tf.pow(YBaseChangeSigmoid - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]]), 2))
-            YZygosityCrossEntropy = tf.nn.log_softmax(YZygosityLogits)\
-                                    * -tf.slice(YPH, [0,self.outputShape1[0]], [-1,self.outputShape2[0]])
-            loss2 = tf.reduce_sum(YZygosityCrossEntropy)
-            YVarTypeCrossEntropy = tf.nn.log_softmax(YVarTypeLogits)\
-                                   * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]], [-1,self.outputShape3[0]])
-            loss3 = tf.reduce_sum(YVarTypeCrossEntropy)
-            YIndelLengthCrossEntropy = tf.nn.log_softmax(YIndelLengthLogits)\
-                                       * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]], [-1,self.outputShape4[0]])
-            loss4 = tf.reduce_sum(YIndelLengthCrossEntropy)
+            loss1 = tf.reduce_sum(tf.pow(YBaseChangeSigmoid - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]], name='YBaseChangeGetTruth'), 2, name='YBaseChangeMSE'), name='YBaseChangeReduceSum')
+            YZygosityCrossEntropy = tf.nn.log_softmax(YZygosityLogits, name='YZygosityLogSoftmax')\
+                                    * -tf.slice(YPH, [0,self.outputShape1[0]], [-1,self.outputShape2[0]], name='YZygosityGetTruth')
+            loss2 = tf.reduce_sum(YZygosityCrossEntropy, name='YZygosityReduceSum')
+            YVarTypeCrossEntropy = tf.nn.log_softmax(YVarTypeLogits, name='YVarTypeLogSoftmax')\
+                                   * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]], [-1,self.outputShape3[0]], name='YVarTypeGetTruth')
+            loss3 = tf.reduce_sum(YVarTypeCrossEntropy, name='YVarTypeReduceSum')
+            YIndelLengthCrossEntropy = tf.nn.log_softmax(YIndelLengthLogits, name='YIndelLengthLogSoftmax')\
+                                       * -tf.slice(YPH, [0,self.outputShape1[0]+self.outputShape2[0]+self.outputShape3[0]], [-1,self.outputShape4[0]], name='YIndelLengthGetTruth')
+            loss4 = tf.reduce_sum(YIndelLengthCrossEntropy, name='YIndelLengthReduceSum')
             loss = loss1 + loss2 + loss3 + loss4
             self.loss = loss
 
@@ -120,8 +142,10 @@ class Clairvoyante(object):
             tf.summary.scalar("loss3", loss3)
             tf.summary.scalar("loss4", loss4)
             tf.summary.scalar("loss", loss)
-            for var in tf.trainable_variables():
-                tf.summary.histogram(var.op.name, var)
+
+            # For report or debug. Fetching histogram summary is slow, GPU utilization will be low if enabled.
+            #for var in tf.trainable_variables():
+            #    tf.summary.histogram(var.op.name, var)
             self.merged_summary_op = tf.summary.merge_all()
 
             self.training_op = tf.train.AdamOptimizer(learning_rate=learningRatePH).minimize(loss)
@@ -136,30 +160,40 @@ class Clairvoyante(object):
     def train(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
-        loss = 0
         loss, _, summary = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
-                                              feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
-                                              self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
+                                              feed_dict={self.XPH:batchX, self.YPH:batchY,
+                                                         self.learningRatePH:self.learningRateVal,
+                                                         self.phasePH:True,
+                                                         self.dropoutRateFC4PH:self.dropoutRateFC4Val,
+                                                         self.dropoutRateFC5PH:self.dropoutRateFC5Val})
         return loss, summary
 
     def trainNoRT(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
         self.trainLossRTVal, _, self.trainSummaryRTVal = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
-                                              feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
-                                              self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
+                                              feed_dict={self.XPH:batchX, self.YPH:batchY,
+                                                         self.learningRatePH:self.learningRateVal,
+                                                         self.phasePH:True,
+                                                         self.dropoutRateFC4PH:self.dropoutRateFC4Val,
+                                                         self.dropoutRateFC5PH:self.dropoutRateFC5Val})
 
     def getLoss(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
-        loss = 0
-        loss  = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
+        loss = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY,
+                                                       self.phasePH:False,
+                                                       self.dropoutRateFC4PH:0.0,
+                                                       self.dropoutRateFC5PH:0.0})
         return loss
 
     def getLossNoRT(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
-        self.getLossLossRTVal = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
+        self.getLossLossRTVal = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY,
+                                                                        self.phasePH:False,
+                                                                        self.dropoutRateFC4PH:0.0,
+                                                                        self.dropoutRateFC5PH:0.0})
 
     def setLearningRate(self, learningRate=None):
         if learningRate == None:
@@ -185,7 +219,11 @@ class Clairvoyante(object):
     def predict(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
-        base, zygosity, varType, indelLength = self.session.run( (self.YBaseChangeSigmoid, self.YZygositySoftmax, self.YVarTypeSoftmax, self.YIndelLengthSoftmax), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
+        base, zygosity, varType, indelLength = self.session.run( (self.YBaseChangeSigmoid, self.YZygositySoftmax, self.YVarTypeSoftmax, self.YIndelLengthSoftmax),
+                                                                  feed_dict={self.XPH:XArray,
+                                                                             self.phasePH:False,
+                                                                             self.dropoutRateFC4PH:0.0,
+                                                                             self.dropoutRateFC5PH:0.0})
         return base, zygosity, varType, indelLength
 
     def __del__(self):
