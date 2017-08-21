@@ -8,7 +8,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     if args.v1 == True:
         import utils_v1 as utils
-    else:
+    elif args.v2 == True or args.v3 == True:
         import utils_v2 as utils
     utils.SetupEnv()
     Convert(args, utils)
@@ -45,6 +45,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--bin_fn', type=str, default = None,
             help="Output a binary tensor file")
+
+    parser.add_argument('--v3', type=bool, default = True,
+            help="Use Clairvoyante version 3")
+
+    parser.add_argument('--v2', type=bool, default = False,
+            help="Use Clairvoyante version 2")
 
     parser.add_argument('--v1', type=bool, default = False,
             help="Use Clairvoyante version 1")

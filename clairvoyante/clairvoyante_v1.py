@@ -143,12 +143,24 @@ class Clairvoyante(object):
                                               self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
         return loss, summary
 
+    def trainNoRT(self, batchX, batchY):
+        #for i in range(len(batchX)):
+        #    tf.image.per_image_standardization(batchX[i])
+        self.trainLossRTVal, _, self.trainSummaryRTVal = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
+                                              feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
+                                              self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
+
     def getLoss(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
         loss = 0
         loss  = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
         return loss
+
+    def getLossNoRT(self, batchX, batchY):
+        #for i in range(len(batchX)):
+        #    tf.image.per_image_standardization(batchX[i])
+        self.getLossLossRTVal = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
 
     def setLearningRate(self, learningRate=None):
         if learningRate == None:

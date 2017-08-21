@@ -6,17 +6,15 @@ class Clairvoyante(object):
 
     def __init__(self, inputShape = (2*param.flankingBaseNum+1, 4, param.matrixNum),
                        outputShape1 = (4, ), outputShape2 = (2, ), outputShape3 = (4, ), outputShape4 = (6, ),
-                       kernelSize1 = (1, 4), kernelSize2 = (2, 4), kernelSize3 = (3, 4),
-                       pollSize1 = (5, 1), pollSize2 = (4, 1), pollSize3 = (3, 1),
-                       numFeature1 = 16, numFeature2 = 32, numFeature3 = 48,
-                       hiddenLayerUnits4 = 336, hiddenLayerUnits5 = 168,
+                       kernelSize1 = (1, 4), kernelSize2 = (3, 4), kernelSize3 = (5, 4),
+                       numFeature1 = 8, numFeature2 = 16, numFeature3 = 32,
+                       hiddenLayerUnits4 = 36, hiddenLayerUnits5 = 18,
                        initialLearningRate = param.initialLearningRate,
                        learningRateDecay = param.learningRateDecay,
                        dropoutRateFC4 = param.dropoutRateFC4, dropoutRateFC5 = param.dropoutRateFC5):
         self.inputShape = inputShape
         self.outputShape1 = outputShape1; self.outputShape2 = outputShape2; self.outputShape3 = outputShape3; self.outputShape4 = outputShape4
         self.kernelSize1 = kernelSize1; self.kernelSize2 = kernelSize2; self.kernelSize3 = kernelSize3
-        self.pollSize1 = pollSize1; self.pollSize2 = pollSize2; self.pollSize3 = pollSize3
         self.numFeature1 = numFeature1; self.numFeature2 = numFeature2; self.numFeature3 = numFeature3
         self.hiddenLayerUnits4 = hiddenLayerUnits4; self.hiddenLayerUnits5 = hiddenLayerUnits5
         self.learningRateVal = initialLearningRate
@@ -54,12 +52,7 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv1')
 
-            pool1 = tf.layers.max_pooling2d(inputs=conv1,
-                                            pool_size=self.pollSize1,
-                                            strides=1,
-                                            name='pool1')
-
-            conv2 = tf.layers.conv2d(inputs=pool1,
+            conv2 = tf.layers.conv2d(inputs=conv1,
                                      filters=self.numFeature2,
                                      kernel_size=self.kernelSize2,
                                      kernel_initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0, mode='FAN_IN', uniform=False),
@@ -67,12 +60,7 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv2')
 
-            pool2 = tf.layers.max_pooling2d(inputs=conv2,
-                                            pool_size=self.pollSize2,
-                                            strides=1,
-                                            name='pool2')
-
-            conv3 = tf.layers.conv2d(inputs=pool2,
+            conv3 = tf.layers.conv2d(inputs=conv2,
                                      filters=self.numFeature3,
                                      kernel_size=self.kernelSize3,
                                      kernel_initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0, mode='FAN_IN', uniform=False),
@@ -80,15 +68,8 @@ class Clairvoyante(object):
                                      activation=selu.selu,
                                      name='conv3')
 
-            pool3 = tf.layers.max_pooling2d(inputs=conv3,
-                                            pool_size=self.pollSize3,
-                                            strides=1,
-                                            name='pool3')
-
-            flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1) - (self.pollSize3[0] - 1))
-            flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1) - (self.pollSize3[1] - 1))
-            flat_size *= self.numFeature3
-            conv3_flat =  tf.reshape(pool3, [-1,  flat_size])
+            flat_size = self.inputShape[0] * self.inputShape[1] * self.numFeature3
+            conv3_flat =  tf.reshape(conv3, [-1,  flat_size])
 
             fc4 = tf.layers.dense(inputs=conv3_flat,
                                  units=self.hiddenLayerUnits4,

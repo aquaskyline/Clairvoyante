@@ -18,12 +18,18 @@ def Run(args):
             import clairvoyante_v1_slim as cv
         else:
             import clairvoyante_v1 as cv
-    else:
+    elif args.v2 == True:
         import utils_v2 as utils
         if args.slim == True:
             import clairvoyante_v2_slim as cv
         else:
             import clairvoyante_v2 as cv
+    elif args.v3 == True:
+        import utils_v2 as utils # v3 network is using v2 utils
+        if args.slim == True:
+            import clairvoyante_v3_slim as cv
+        else:
+            import clairvoyante_v3 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
@@ -176,7 +182,7 @@ def TrainAll(args, m, utils):
             if endFlag != 0:
                 break
         bases = np.concatenate(bases[:]); ts = np.concatenate(ts[:])
-    else:
+    elif args.v2 == True or args.v3 == True:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         bases = []; zs = []; ts = []; ls = []
@@ -211,7 +217,7 @@ def TrainAll(args, m, utils):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
         for i in range(5):
             logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
-    else:
+    elif args.v2 == True or args.v3 == True::
         logging.info("Version 2 model, evaluation on base change:")
         allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
@@ -269,6 +275,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--olog_dir', type=str, default = None,
             help="Directory for tensorboard log outputs, optional")
+
+    parser.add_argument('--v3', type=bool, default = True,
+            help="Use Clairvoyante version 3")
+
+    parser.add_argument('--v2', type=bool, default = False,
+            help="Use Clairvoyante version 2")
 
     parser.add_argument('--v1', type=bool, default = False,
             help="Use Clairvoyante version 1")

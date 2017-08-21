@@ -19,12 +19,18 @@ def Run(args):
             import clairvoyante_v1_slim as cv
         else:
             import clairvoyante_v1 as cv
-    else:
+    elif args.v2 == True:
         import utils_v2 as utils
         if args.slim == True:
             import clairvoyante_v2_slim as cv
         else:
             import clairvoyante_v2 as cv
+    elif args.v3 == True:
+        import utils_v2 as utils # v3 network is using v2 utils
+        if args.slim == True:
+            import clairvoyante_v3_slim as cv
+        else:
+            import clairvoyante_v3 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
@@ -68,7 +74,7 @@ def Test(args, m, utils):
                 break
         bases = np.concatenate(bases[:])
         ts = np.concatenate(ts[:])
-    else:
+    elif args.v2 == True or args.v3 == True:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         bases = []; zs = []; ts = []; ls = []
@@ -111,7 +117,7 @@ def Test(args, m, utils):
         #for b, t, a1, a2 in zip(bases, ts, YArray[:,0:4], YArray[:,4:9]):
         #    s = b.argsort()[::-1]
         #    print >> sys.stdout, np.argmax(a1), s[0], s[1], np.argmax(a2), np.argmax(t)
-    else:
+    elif args.v2 == True or args.v3 == True:
         logging.info("Version 2 model, evaluation on base change:")
         allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
@@ -162,6 +168,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing")
+
+    parser.add_argument('--v3', type=bool, default = True,
+            help="Use Clairvoyante version 3")
+
+    parser.add_argument('--v2', type=bool, default = False,
+            help="Use Clairvoyante version 2")
 
     parser.add_argument('--v1', type=bool, default = False,
             help="Use Clairvoyante version 1")

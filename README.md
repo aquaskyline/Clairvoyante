@@ -39,7 +39,7 @@ zygosity: HET or HOM
 <br>
 type: SNP, INS or DEL
 <br>
-indelLength: 0, 1, 2, 3, 4, >4 
+indelLength: 0, 1, 2, 3, 4, >4
 <br>
 
 ## Quick start with model training

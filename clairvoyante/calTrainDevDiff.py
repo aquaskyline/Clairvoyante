@@ -13,12 +13,18 @@ def Run(args):
             import clairvoyante_v1_slim as cv
         else:
             import clairvoyante_v1 as cv
-    else:
+    elif args.v2 == True:
         import utils_v2 as utils
         if args.slim == True:
             import clairvoyante_v2_slim as cv
         else:
             import clairvoyante_v2 as cv
+    elif args.v3 == True:
+        import utils_v2 as utils # v3 network is using v2 utils
+        if args.slim == True:
+            import clairvoyante_v3_slim as cv
+        else:
+            import clairvoyante_v3 as cv
     utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
@@ -99,6 +105,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--chkpnt_fn', nargs='+', type=str, default = None,
             help="Input a list of checkpoint for calculation")
+
+    parser.add_argument('--v3', type=bool, default = True,
+            help="Use Clairvoyante version 3")
+
+    parser.add_argument('--v2', type=bool, default = False,
+            help="Use Clairvoyante version 2")
 
     parser.add_argument('--v1', type=bool, default = False,
             help="Use Clairvoyante version 1")
