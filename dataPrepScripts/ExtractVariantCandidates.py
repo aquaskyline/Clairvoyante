@@ -15,7 +15,7 @@ cigarRe = r"(\d+)([MIDNSHP=X])"
 def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
 
     totalCount = 0
-    totalCount += sum(x[1] for x in baseCount) 
+    totalCount += sum(x[1] for x in baseCount)
     if totalCount < minCoverage:
         return None
 

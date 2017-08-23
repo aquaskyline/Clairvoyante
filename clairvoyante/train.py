@@ -61,7 +61,10 @@ def TrainAll(args, m, utils):
 
     # Train and save the parameters, we train on the first 90% variant sites and validate on the last 10% variant sites
     logging.info("Start training ...")
-    logging.info("Start at learning rate: %.2e" % m.setLearningRate(args.learning_rate))
+    logging.info("Learning rate: %.2e" % m.setLearningRate(args.learning_rate))
+    logging.info("L2 regularization lambda: %.2e" % m.setL2RegularizationLambda(args.lambd))
+
+
     validationLosses = []
 
     # Model Constants
@@ -128,17 +131,19 @@ def TrainAll(args, m, utils):
             # Adaptive learning rate decay
             c += 1
             flag = 0
-            if c >= 5:
-                if validationLosses[-5][0] - validationLosses[-4][0] < 0:
-                    if validationLosses[-4][0] - validationLosses[-3][0] > 0:
-                        if validationLosses[-3][0] - validationLosses[-2][0] < 0:
-                            if validationLosses[-2][0] - validationLosses[-1][0] > 0:
-                                flag = 1
-                elif validationLosses[-5][0] - validationLosses[-4][0] > 0:
-                    if validationLosses[-4][0] - validationLosses[-3][0] < 0:
-                        if validationLosses[-3][0] - validationLosses[-2][0] > 0:
-                            if validationLosses[-2][0] - validationLosses[-1][0] < 0:
-                                flag = 1
+            if c >= 6:
+                if validationLosses[-6][0] - validationLosses[-5][0] > 0:
+                    if validationLosses[-5][0] - validationLosses[-4][0] < 0:
+                        if validationLosses[-4][0] - validationLosses[-3][0] > 0:
+                            if validationLosses[-3][0] - validationLosses[-2][0] < 0:
+                                if validationLosses[-2][0] - validationLosses[-1][0] > 0:
+                                    flag = 1
+                elif validationLosses[-6][0] - validationLosses[-5][0] < 0:
+                    if validationLosses[-5][0] - validationLosses[-4][0] > 0:
+                        if validationLosses[-4][0] - validationLosses[-3][0] < 0:
+                            if validationLosses[-3][0] - validationLosses[-2][0] > 0:
+                                if validationLosses[-2][0] - validationLosses[-1][0] < 0:
+                                    flag = 1
                 else:
                     flag = 1
             if flag == 1:
@@ -149,6 +154,7 @@ def TrainAll(args, m, utils):
                 if maxLearningRateSwitch == 0:
                   break
                 logging.info("New learning rate: %.2e" % m.setLearningRate())
+                logging.info("New L2 regularization lambda: %.2e" % m.setL2RegularizationLambda())
                 c = 0
             # Reset per epoch variables
             i += 1
@@ -217,7 +223,7 @@ def TrainAll(args, m, utils):
             ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
         for i in range(5):
             logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
-    elif args.v2 == True or args.v3 == True::
+    elif args.v2 == True or args.v3 == True:
         logging.info("Version 2 model, evaluation on base change:")
         allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
@@ -269,6 +275,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--learning_rate', type=float, default = param.initialLearningRate,
             help="Set the initial learning rate, default: %(default)s")
+
+    parser.add_argument('--lambd', type=float, default = param.l2RegularizationLambda,
+            help="Set the l2 regularization lambda, default: %(default)s")
 
     parser.add_argument('--ochk_prefix', type=str, default = None,
             help="Prefix for checkpoint outputs at each learning rate change, optional")

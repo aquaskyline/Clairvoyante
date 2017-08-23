@@ -88,7 +88,7 @@ class Clairvoyante(object):
             dropout5 = selu.dropout_selu(fc5, dropoutRateFC5PH, training=phasePH, name='dropout5')
 
             epsilon = tf.constant(value=1e-10)
-            YBaseChangeSigmoid = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChangeSigmoid')
+            YBaseChangeSigmoid = tf.layers.dense(inputs=dropout4, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChangeSigmoid')
             YZygosityFC = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='YZygosityFC')
             YZygosityLogits = tf.add(YZygosityFC, epsilon, name='YZygosityLogits')
             YZygositySoftmax = tf.nn.softmax(YZygosityLogits, name='YZygositySoftmax')
@@ -185,6 +185,13 @@ class Clairvoyante(object):
         else:
             self.learningRateVal = learningRate
         return self.learningRateVal
+
+    def setL2RegularizationLambda(self, l2RegularizationLambda=None):
+        if  l2RegularizationLambda == None:
+            self.l2RegularizationLambdaVal = self.l2RegularizationLambdaVal * self.l2RegularizationLambdaDecay
+        else:
+            self.l2RegularizationLambdaVal = l2RegularizationLambda
+        return self.l2RegularizationLambdaVal
 
     def saveParameters(self, fn):
         with self.g.as_default():
