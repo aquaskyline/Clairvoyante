@@ -48,6 +48,7 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv1')
+            self.conv1 = conv1
 
             conv2 = tf.layers.conv2d(inputs=conv1,
                                      filters=self.numFeature2,
@@ -56,6 +57,7 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv2')
+            self.conv2 = conv2
 
             conv3 = tf.layers.conv2d(inputs=conv2,
                                      filters=self.numFeature3,
@@ -64,6 +66,7 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv3')
+            self.conv3 = conv3
 
             flat_size = self.inputShape[0] * self.inputShape[1] * self.numFeature3
             conv3_flat =  tf.reshape(conv3, [-1,  flat_size])
@@ -73,31 +76,35 @@ class Clairvoyante(object):
                                  kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                  activation=selu.selu,
                                  name='fc4')
+            self.fc4 = fc4
 
             dropout4 = selu.dropout_selu(fc4, dropoutRatePH, training=phasePH, name='dropout4')
+            self.dropout4 = dropout4
 
             fc5 = tf.layers.dense(inputs=dropout4,
                                  units=self.hiddenLayerUnits5,
                                  kernel_initializer = tf.truncated_normal_initializer(stddev=1e-5, dtype=tf.float32),
                                  activation=selu.selu,
                                  name='fc5')
+            self.fc5 = fc5
 
             dropout5 = selu.dropout_selu(fc5, dropoutRatePH, training=phasePH, name='dropout5')
+            self.dropout5 = dropout5
 
             epsilon = tf.constant(value=1e-10)
             YBaseChangeSigmoid = tf.layers.dense(inputs=dropout5, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChangeSigmoid')
+            self.YBaseChangeSigmoid = YBaseChangeSigmoid
             YZygosityFC = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='YZygosityFC')
             YZygosityLogits = YZygosityFC + epsilon
             YZygositySoftmax = tf.nn.softmax(YZygosityLogits, name='YZygositySoftmax')
+            self.YZygositySoftmax = YZygositySoftmax
             YVarTypeFC = tf.layers.dense(inputs=dropout5, units=self.outputShape3[0], activation=selu.selu, name='YVarTypeFC')
             YVarTypeLogits = YVarTypeFC + epsilon
             YVarTypeSoftmax = tf.nn.softmax(YVarTypeLogits, name='YVarTypeSoftmax')
+            self.YVarTypeSoftmax = YVarTypeSoftmax
             YIndelLengthFC = tf.layers.dense(inputs=dropout5, units=self.outputShape4[0], activation=selu.selu, name='YIndelLengthFC')
             YIndelLengthLogits = YIndelLengthFC + epsilon
             YIndelLengthSoftmax = tf.nn.softmax(YIndelLengthLogits, name='YIndelLengthSoftmax')
-            self.YBaseChangeSigmoid = YBaseChangeSigmoid
-            self.YZygositySoftmax = YZygositySoftmax
-            self.YVarTypeSoftmax = YVarTypeSoftmax
             self.YIndelLengthSoftmax = YIndelLengthSoftmax
 
             loss1 = tf.reduce_sum(tf.pow(YBaseChangeSigmoid - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]]), 2))

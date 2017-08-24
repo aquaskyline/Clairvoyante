@@ -56,11 +56,13 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv1')
+            self.conv1 = conv1
 
             pool1 = tf.layers.max_pooling2d(inputs=conv1,
                                             pool_size=self.pollSize1,
                                             strides=1,
                                             name='pool1')
+            self.pool1 = pool1
 
             conv2 = tf.layers.conv2d(inputs=pool1,
                                      filters=self.numFeature2,
@@ -69,11 +71,13 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv2')
+            self.conv2 = conv2
 
             pool2 = tf.layers.max_pooling2d(inputs=conv2,
                                             pool_size=self.pollSize2,
                                             strides=1,
                                             name='pool2')
+            self.pool2 = pool2
 
             conv3 = tf.layers.conv2d(inputs=pool2,
                                      filters=self.numFeature3,
@@ -82,11 +86,13 @@ class Clairvoyante(object):
                                      padding="same",
                                      activation=selu.selu,
                                      name='conv3')
+            self.conv3 = conv3
 
             pool3 = tf.layers.max_pooling2d(inputs=conv3,
                                             pool_size=self.pollSize3,
                                             strides=1,
                                             name='pool3')
+            self.pool3 = pool3
 
             flat_size = ( self.inputShape[0] - (self.pollSize1[0] - 1) - (self.pollSize2[0] - 1) - (self.pollSize3[0] - 1))
             flat_size *= ( self.inputShape[1] - (self.pollSize1[1] - 1) - (self.pollSize2[1] - 1) - (self.pollSize3[1] - 1))
@@ -98,31 +104,35 @@ class Clairvoyante(object):
                                  kernel_initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0, mode='FAN_IN', uniform=False),
                                  activation=selu.selu,
                                  name='fc4')
+            self.fc4 = fc4
 
             dropout4 = selu.dropout_selu(fc4, dropoutRateFC4PH, training=phasePH, name='dropout4')
+            self.dropout4 = dropout4
 
             fc5 = tf.layers.dense(inputs=dropout4,
                                  units=self.hiddenLayerUnits5,
                                  kernel_initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0, mode='FAN_IN', uniform=False),
                                  activation=selu.selu,
                                  name='fc5')
+            self.fc5 = fc5
 
             dropout5 = selu.dropout_selu(fc5, dropoutRateFC5PH, training=phasePH, name='dropout5')
+            self.dropout5 = dropout5
 
             epsilon = tf.constant(value=1e-10)
             YBaseChangeSigmoid = tf.layers.dense(inputs=dropout4, units=self.outputShape1[0], activation=tf.nn.sigmoid, name='YBaseChangeSigmoid')
+            self.YBaseChangeSigmoid = YBaseChangeSigmoid
             YZygosityFC = tf.layers.dense(inputs=dropout5, units=self.outputShape2[0], activation=selu.selu, name='YZygosityFC')
             YZygosityLogits = tf.add(YZygosityFC, epsilon, name='YZygosityLogits')
             YZygositySoftmax = tf.nn.softmax(YZygosityLogits, name='YZygositySoftmax')
+            self.YZygositySoftmax = YZygositySoftmax
             YVarTypeFC = tf.layers.dense(inputs=dropout5, units=self.outputShape3[0], activation=selu.selu, name='YVarTypeFC')
             YVarTypeLogits = tf.add(YVarTypeFC, epsilon, name='YVarTypeLogits')
             YVarTypeSoftmax = tf.nn.softmax(YVarTypeLogits, name='YVarTypeSoftmax')
+            self.YVarTypeSoftmax = YVarTypeSoftmax
             YIndelLengthFC = tf.layers.dense(inputs=dropout5, units=self.outputShape4[0], activation=selu.selu, name='YIndelLengthFC')
             YIndelLengthLogits = tf.add(YIndelLengthFC, epsilon, name='YIndelLengthLogits')
             YIndelLengthSoftmax = tf.nn.softmax(YIndelLengthLogits, name='YIndelLengthSoftmax')
-            self.YBaseChangeSigmoid = YBaseChangeSigmoid
-            self.YZygositySoftmax = YZygositySoftmax
-            self.YVarTypeSoftmax = YVarTypeSoftmax
             self.YIndelLengthSoftmax = YIndelLengthSoftmax
 
             loss1 = tf.reduce_sum(tf.pow(YBaseChangeSigmoid - tf.slice(YPH,[0,0],[-1,self.outputShape1[0]], name='YBaseChangeGetTruth'), 2, name='YBaseChangeMSE'), name='YBaseChangeReduceSum')
@@ -146,6 +156,7 @@ class Clairvoyante(object):
             tf.summary.scalar("loss2", loss2)
             tf.summary.scalar("loss3", loss3)
             tf.summary.scalar("loss4", loss4)
+            tf.summary.scalar("lossL2", lossL2)
             tf.summary.scalar("loss", loss)
 
             # For report or debug. Fetching histogram summary is slow, GPU utilization will be low if enabled.
