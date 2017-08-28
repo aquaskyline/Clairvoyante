@@ -66,7 +66,7 @@ def Test(args, m, utils):
                 else: outBase = "%s%s" % (base1, base1)
                 print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varTypeName
 
-        elif args.v2 == True or args.v3 == True::
+        elif args.v2 == True or args.v3 == True:
             base, z, t, l = m.predict(XBatch)
             if num != len(base):
               sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
