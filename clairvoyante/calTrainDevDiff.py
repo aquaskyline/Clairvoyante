@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 import param
 import pickle
@@ -50,7 +51,7 @@ def CalcAll(args, m, utils):
     numValItems = total - validationStart
 
     for n in args.chkpnt_fn:
-        m.restoreParameters("./"+n)
+        m.restoreParameters(os.path.abspath(n))
         datasetPtr = 0
         trainingLost = 0
         validationLost = 0

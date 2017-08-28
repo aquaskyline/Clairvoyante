@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import argparse
 import param
@@ -35,7 +36,7 @@ def Run(args):
     m.init()
 
     if args.chkpnt_fn != None:
-        m.restoreParameters("./"+args.chkpnt_fn)
+        m.restoreParameters(os.path.abspath(args.chkpnt_fn))
     TrainAll(args, m, utils)
 
 

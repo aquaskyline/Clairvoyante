@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import argparse
 import param
@@ -35,7 +36,7 @@ def Run(args):
     m = cv.Clairvoyante()
     m.init()
 
-    m.restoreParameters("./"+args.chkpnt_fn)
+    m.restoreParameters(os.path.abspath(args.chkpnt_fn))
     Test(args, m, utils)
 
 
