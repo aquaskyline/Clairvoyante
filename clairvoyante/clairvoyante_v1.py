@@ -22,6 +22,8 @@ class Clairvoyante(object):
         self.learningRateVal = initialLearningRate
         self.learningRateDecay = learningRateDecay
         self.dropoutRateVal = dropoutRate
+        self.trainLossRTVal = None; self.trainSummaryRTVal = None; self.getLossLossRTVal = None
+        self.predictBaseRTVal = None; self.predictVarTypeRTVal = None;
         self.g = tf.Graph()
         self._buildGraph()
         self.session = tf.Session(graph = self.g)
@@ -196,8 +198,18 @@ class Clairvoyante(object):
     def predict(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
-        base, varType = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.phasePH:False, self.dropoutRatePH:0.0})
+        base, varType = self.session.run( (self.Y1, self.Y3), feed_dict={self.XPH:XArray, self.learningRatePH:0.0, self.phasePH:False, self.dropoutRatePH:0.0})
         return base, varType
+
+    def predictNoRT(self, XArray):
+        #for i in range(len(batchX)):
+        #    tf.image.per_image_standardization(XArray[i])
+        self.predictBaseRTVal, self.predictVarTypeRTVal \
+                         = self.session.run( (self.Y1, self.Y3),
+                                              feed_dict={self.XPH:XArray,
+                                                         self.learningRatePH:0.0,
+                                                         self.phasePH:False,
+                                                         self.dropoutRatePH:0.0})
 
     def __del__(self):
         self.session.close()

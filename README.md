@@ -6,6 +6,7 @@ Make sure you have Tensorflow >= 1.0.0 installed, the following commands install
 pip install tensorflow
 pip install blosc
 pip install intervaltree
+pip install numpy
 python -c 'import tensorflow as tf; print(tf.__version__)'
 ```
 To do variant calling base on trained models, CPU is enough. To train a new model, a high-end GPU along with the GPU version of Tensorflow is needed.

@@ -12,10 +12,8 @@ import gc
 base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
 def SetupEnv():
-
     blosc.set_nthreads(4)
     gc.enable()
-
 
 def GetTensor( tensor_fn, num ):
         f = open( tensor_fn, "r" )
@@ -32,22 +30,29 @@ def GetTensor( tensor_fn, num ):
             if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
                 continue
 
-            x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
+            x = np.reshape(np.array([float(x) for x in row[3:]], dtype=np.float32), (2*param.flankingBaseNum+1,4,param.matrixNum))
 
             for i in range(1, param.matrixNum):
                 x[:,:,i] -= x[:,:,0]
+
+            ''' # Which version is faster?
+            for i in range(0, 2*param.flankingBaseNum+1):
+                for j in range(0, 4):
+                    for k in range(1, param.matrixNum):
+                        x[i][j][k] -= x[i][j][0]
+            '''
 
             XArray.append(x)
             posArray.append(key)
             c += 1
 
             if c == num:
-                yield c, np.array(XArray), np.array(posArray)
+                yield 0, c, np.array(XArray), np.array(posArray)
                 c = 0
                 XArray = []
                 posArray = []
 
-        yield c, np.array(XArray), np.array(posArray)
+        yield 1, c, np.array(XArray), np.array(posArray)
 
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn ):

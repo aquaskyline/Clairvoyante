@@ -5,6 +5,8 @@ import argparse
 import param
 import logging
 import numpy as np
+from threading import Thread
+from copy import copy
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 num2base = dict(zip((0, 1, 2, 3), "ACGT"))
@@ -42,51 +44,81 @@ def Run(args):
     Test(args, m, utils)
 
 
+def Output(args, call_fh, num, posBatch, base, z, t, l):
+    if args.v1 == True:
+        if num != len(base):
+          sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
+        #          --------------  -------------------
+        #          Base chng       Var type
+        #          A   C   G   T   HET HOM INS DEL REF
+        #          0   1   2   3   4   5   6   7   8
+        for j in range(len(base)):
+            if args.show_ref == False and np.argmax(t[j]) == 4: continue
+            sortBase = base[j].argsort()[::-1]
+            base1 = num2base[sortBase[0]]
+            base2 = num2base[sortBase[1]]
+            if(base1 > base2): base1, base2 = base2, base1
+            varTypeName = v1Type2Name[np.argmax(t[j])]
+            if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
+            else: outBase = "%s%s" % (base1, base1)
+            print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varTypeName
+
+    elif args.v2 == True or args.v3 == True:
+        if num != len(base):
+          sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
+        #          --------------  ------  ------------    ------------------
+        #          Base chng       Zygo.   Var type        Var length
+        #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
+        #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+        for j in range(len(base)):
+            if args.show_ref == False and np.argmax(t[j]) == 0: continue
+            sortBase = base[j].argsort()[::-1]
+            base1 = num2base[sortBase[0]]
+            base2 = num2base[sortBase[1]]
+            if(base1 > base2): base1, base2 = base2, base1
+            if np.argmax(z[j]) == 0: outBase = "%s%s" % (base1, base2)
+            else: outBase = "%s%s" % (base1, base1)
+            varZygosityName = v2Zygosity2Name[np.argmax(z[j])]
+            varTypeName = v2Type2Name[np.argmax(t[j])]
+            varLength = v2Length2Name[np.argmax(l[j])]
+            print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varZygosityName, varTypeName, varLength
+
+
 def Test(args, m, utils):
     call_fh = open(args.call_fn, "w")
+    tensorGenerator = utils.GetTensor( args.tensor_fn, param.predictBatchSize )
     logging.info("Calling variants ...")
-    predictBatchSize = param.predictBatchSize
     predictStart = time.time()
-    for num, XBatch, posBatch in utils.GetTensor( args.tensor_fn, param.predictBatchSize ):
-        if args.v1 == True:
-            base, t = m.predict(XBatch)
-            if num != len(base):
-              sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
-            #          --------------  -------------------
-            #          Base chng       Var type
-            #          A   C   G   T   HET HOM INS DEL REF
-            #          0   1   2   3   4   5   6   7   8
-            for j in range(len(base)):
-                if args.show_ref == False and np.argmax(t[j]) == 4: continue
-                sortBase = base[j].argsort()[::-1]
-                base1 = num2base[sortBase[0]];
-                base2 = num2base[sortBase[1]];
-                if(base1 > base2): base1, base2 = base2, base1
-                varTypeName = v1Type2Name[np.argmax(t[j])];
-                if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
-                else: outBase = "%s%s" % (base1, base1)
-                print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varTypeName
+    end = 0; end2 = 0; terminate = 0
+    end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
+    m.predictNoRT(XBatch2)
+    base = copy(m.predictBaseRTVal); z = copy(m.predictZygosityRTVal); t = copy(m.predictVarTypeRTVal); l = copy(m.predictIndelLengthRTVal)
+    if end2 == 0:
+        end = end2; num = num2; posBatch = posBatch2
+        end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
+        while True:
+            if end == 1:
+                terminate = 1
+            threadPool = []
+            if end == 0:
+                threadPool.append(Thread(target=m.predictNoRT, args=(XBatch2, )))
+            threadPool.append(Thread(target=Output, args=(args, call_fh, num, posBatch, base, z, t, l, )))
+            for t in threadPool: t.start()
+            if end2 == 0:
+                end3, num3, XBatch3, posBatch3 = next(tensorGenerator)
+            for t in threadPool: t.join()
+            base = copy(m.predictBaseRTVal); z = copy(m.predictZygosityRTVal); t = copy(m.predictVarTypeRTVal); l = copy(m.predictIndelLengthRTVal)
+            if end == 0:
+                end = end2; num = num2; posBatch = posBatch2
+            if end2 == 0:
+                end2 = end3; num2 = num3; XBatch2 = XBatch3; posBatch2 = posBatch3
+            #print >> sys.stderr, end, end2, end3, terminate
+            if terminate == 1:
+                break
+    elif end2 == 1:
+        Output(args, call_fh, num2, posBatch2, base, z, t, l)
 
-        elif args.v2 == True or args.v3 == True:
-            base, z, t, l = m.predict(XBatch)
-            if num != len(base):
-              sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
-            #          --------------  ------  ------------    ------------------
-            #          Base chng       Zygo.   Var type        Var length
-            #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
-            #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
-            for j in range(len(base)):
-                if args.show_ref == False and np.argmax(t[j]) == 0: continue
-                sortBase = base[j].argsort()[::-1]
-                base1 = num2base[sortBase[0]];
-                base2 = num2base[sortBase[1]];
-                if(base1 > base2): base1, base2 = base2, base1
-                if np.argmax(z[j]) == 0: outBase = "%s%s" % (base1, base2)
-                else: outBase = "%s%s" % (base1, base1)
-                varZygosityName = v2Zygosity2Name[np.argmax(z[j])];
-                varTypeName = v2Type2Name[np.argmax(t[j])];
-                varLength = v2Length2Name[np.argmax(l[j])];
-                print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varZygosityName, varTypeName, varLength
+
 
     logging.info("Total time elapsed: %.2f s" % (time.time() - predictStart))
 

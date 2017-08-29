@@ -42,12 +42,12 @@ def GetTensor( tensor_fn, num ):
             c += 1
 
             if c == num:
-                yield c, np.array(XArray), np.array(posArray)
+                yield 0, c, np.array(XArray), np.array(posArray)
                 c = 0
                 XArray = []
                 posArray = []
 
-        yield c, np.array(XArray), np.array(posArray)
+        yield 1, c, np.array(XArray), np.array(posArray)
 
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn ):

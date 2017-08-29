@@ -22,6 +22,8 @@ class Clairvoyante(object):
         self.learningRateVal = initialLearningRate; self.learningRateDecay = learningRateDecay
         self.dropoutRateFC4Val = dropoutRateFC4; self.dropoutRateFC5Val = dropoutRateFC5
         self.l2RegularizationLambdaVal = l2RegularizationLambda; self.l2RegularizationLambdaDecay = l2RegularizationLambdaDecay
+        self.trainLossRTVal = None; self.trainSummaryRTVal = None; self.getLossLossRTVal = None
+        self.predictBaseRTVal = None; self.predictZygosityRTVal = None; self.predictVarTypeRTVal = None; self.predictIndelLengthRTVal = None
         self.g = tf.Graph()
         self._buildGraph()
         self.session = tf.Session(graph = self.g)
@@ -256,6 +258,18 @@ class Clairvoyante(object):
                                                                              self.dropoutRateFC5PH:0.0,
                                                                              self.l2RegularizationLambdaPH:0.0})
         return base, zygosity, varType, indelLength
+
+    def predictNoRT(self, XArray):
+        #for i in range(len(batchX)):
+        #    tf.image.per_image_standardization(XArray[i])
+        self.predictBaseRTVal, self.predictZygosityRTVal, self.predictVarTypeRTVal, self.predictIndelLengthRTVal \
+                                             = self.session.run( (self.YBaseChangeSigmoid, self.YZygositySoftmax, self.YVarTypeSoftmax, self.YIndelLengthSoftmax),
+                                                                  feed_dict={self.XPH:XArray,
+                                                                             self.learningRatePH:0.0,
+                                                                             self.phasePH:False,
+                                                                             self.dropoutRateFC4PH:0.0,
+                                                                             self.dropoutRateFC5PH:0.0,
+                                                                             self.l2RegularizationLambdaPH:0.0})
 
     def __del__(self):
         self.session.close()
