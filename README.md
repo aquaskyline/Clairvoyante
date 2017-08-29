@@ -1,5 +1,7 @@
 ## Clairvoyante
 
+[![License: CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 ## Prerequisition
 Make sure you have Tensorflow >= 1.0.0 installed, the following commands install the lastest CPU version of Tensorflow:
 ```
