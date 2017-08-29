@@ -55,7 +55,7 @@ def GetTensor( tensor_fn, num ):
         yield 1, c, np.array(XArray), np.array(posArray)
 
 
-def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
+def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     tree = {}
     with open(bed_fn) as f:
         for row in f:
@@ -140,7 +140,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn ):
                 Y[key] = baseVec
 
     allPos = sorted(X.keys())
-    random.shuffle(allPos)
+    if shuffle == True:
+        random.shuffle(allPos)
 
     XArrayCompressed = []
     YArrayCompressed = []
