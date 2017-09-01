@@ -17,42 +17,30 @@ def SetupEnv():
 
 def GetTensor( tensor_fn, num ):
         f = open( tensor_fn, "r" )
+        total = 0
         c = 0
-        XArray = []
-        posArray = []
+        rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
+        pos = []
         for row in f: # A variant per row
-            row = row.strip().split()
-            ctgName = row[0]  # Column 1: sequence name
-            pos = int(row[1]) # Column 2: position
-            key = ctgName + ":" + str(pos)
-            refSeq = row[2]  # Column 3: reference seqeunces
-
-            if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
+            row = row.split()
+            if row[2][param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
                 continue
-
-            x = np.reshape(np.array([float(x) for x in row[3:]], dtype=np.float32), (2*param.flankingBaseNum+1,4,param.matrixNum))
-
-            for i in range(1, param.matrixNum):
-                x[:,:,i] -= x[:,:,0]
-
-            ''' # Which version is faster?
-            for i in range(0, 2*param.flankingBaseNum+1):
-                for j in range(0, 4):
-                    for k in range(1, param.matrixNum):
-                        x[i][j][k] -= x[i][j][0]
-            '''
-
-            XArray.append(x)
-            posArray.append(key)
+            pos.append(row[0] + ":" + row[1])
+            rows[c] = np.array(row[3:], dtype=np.float32)
             c += 1
 
             if c == num:
-                yield 0, c, np.array(XArray), np.array(posArray)
+                x = np.reshape(rows, (num,2*param.flankingBaseNum+1,4,param.matrixNum))
+                for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
+                total += c; print >> sys.stderr, "Processed %d tensors" % total
+                yield 0, c, x, pos
                 c = 0
-                XArray = []
-                posArray = []
+                pos = []
 
-        yield 1, c, np.array(XArray), np.array(posArray)
+        x = np.reshape(rows[:c], (c,2*param.flankingBaseNum+1,4,param.matrixNum))
+        for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
+        total += c; print >> sys.stderr, "Processed %d tensors" % total
+        yield 1, c, x, pos
 
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):

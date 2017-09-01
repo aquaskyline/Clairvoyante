@@ -129,8 +129,8 @@ class Clairvoyante(object):
             tf.summary.scalar("loss3", loss3)
             tf.summary.scalar("loss4", loss4)
             tf.summary.scalar("loss", loss)
-            for var in tf.trainable_variables():
-                tf.summary.histogram(var.op.name, var)
+            #for var in tf.trainable_variables():
+            #    tf.summary.histogram(var.op.name, var)
             self.merged_summary_op = tf.summary.merge_all()
 
             self.training_op = tf.train.AdamOptimizer(learning_rate=learningRatePH).minimize(loss)

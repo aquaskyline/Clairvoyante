@@ -58,7 +58,6 @@ def get_embeddings(m, XArray):
     return embeddings1, embeddings2, embeddings3, embeddings4
 
 def get_labels(YBatch):
-    dict1 = {0:'A', 1:'C', 2:'G', 3: 'T'}
     dict2 = {0:'HET', 1:'HOM'}
     dict3 = {0: 'REF', 1:'SNP', 2:'INS', 3:'DEL'}
     dict4 = {0:'0', 1:'1', 2:'2', 3:'3', 4:'4', 5:'>4'}
@@ -66,10 +65,9 @@ def get_labels(YBatch):
     labels2 = []
     labels3 = []
     labels4 = []
+    labels1.append("A\tC\tG\tT")
     for l in YBatch[:, 0:4]:
-        for i in xrange(4):
-            if l[i] == 1:
-                labels1.append(dict1[i])
+        labels1.append("%f\t%f\t%f\t%f" % (l[0], l[1], l[2], l[3]))
     for l in YBatch[:, 4:6]:
         for i in xrange(2):
             if l[i] == 1:

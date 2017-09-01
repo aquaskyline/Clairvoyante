@@ -151,6 +151,11 @@ class Clairvoyante(object):
             loss = loss1 + loss2 + loss3 + loss4 + lossL2
             self.loss = loss
 
+            # add tensorboard embedding
+            self.embedding1 = YBaseChangeSigmoid
+            self.embedding2 = YZygosityLogits
+            self.embedding3 = YVarTypeLogits
+            self.embedding4 = YIndelLengthLogits
             # add summaries
             tf.summary.scalar('learning_rate', learningRatePH)
             tf.summary.scalar('l2Lambda', l2RegularizationLambdaPH)
