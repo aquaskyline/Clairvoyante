@@ -23,7 +23,7 @@ def GetTensor( tensor_fn, num ):
         XArray = []
         posArray = []
         for row in f: # A variant per row
-            row = row.strip().split()
+            row = row.split()
             ctgName = row[0]  # Column 1: sequence name
             pos = int(row[1]) # Column 2: position
             key = ctgName + ":" + str(pos)
@@ -54,7 +54,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     tree = {}
     with open(bed_fn) as f:
         for row in f:
-            row = row.strip().split()
+            row = row.split()
             name = row[0]
             if name not in tree:
                 tree[name] = intervaltree.IntervalTree()
@@ -65,7 +65,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     Y = {}
     with open( var_fn ) as f:
         for row in f:
-            row = row.strip().split()
+            row = row.split()
             ctgName = row[0]
             pos = int(row[1])
             if len(tree[ctgName].search(pos)) == 0:
@@ -102,7 +102,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     X = {}
     with open( tensor_fn ) as f:
         for row in f:
-            row = row.strip().split()
+            row = row.split()
             ctgName = row[0]
             pos = int(row[1])
             if ctgName not in tree:

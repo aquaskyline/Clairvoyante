@@ -12,42 +12,45 @@ import gc
 base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
 def SetupEnv():
+    os.environ["CXX"] = "g++"
     blosc.set_nthreads(4)
     gc.enable()
 
+def UnpackATensorRecord(a, b, c, *d):
+    return a, b, c, np.array(d, dtype=np.float32)
+
 def GetTensor( tensor_fn, num ):
-        f = open( tensor_fn, "r" )
-        total = 0
-        c = 0
-        rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
-        pos = []
-        for row in f: # A variant per row
-            row = row.split()
-            if row[2][param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
-                continue
-            pos.append(row[0] + ":" + row[1])
-            rows[c] = np.array(row[3:], dtype=np.float32)
-            c += 1
+    f = open( tensor_fn, "r" )
+    total = 0
+    c = 0
+    rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
+    pos = []
+    for row in f: # A variant per row
+        chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
+        if seq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
+            continue
+        pos.append(chrom + ":" + coord)
+        c += 1
 
-            if c == num:
-                x = np.reshape(rows, (num,2*param.flankingBaseNum+1,4,param.matrixNum))
-                for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
-                total += c; print >> sys.stderr, "Processed %d tensors" % total
-                yield 0, c, x, pos
-                c = 0
-                pos = []
+        if c == num:
+            x = np.reshape(rows, (num,2*param.flankingBaseNum+1,4,param.matrixNum))
+            for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
+            total += c; print >> sys.stderr, "Processed %d tensors" % total
+            yield 0, c, x, pos
+            c = 0
+            pos = []
 
-        x = np.reshape(rows[:c], (c,2*param.flankingBaseNum+1,4,param.matrixNum))
-        for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
-        total += c; print >> sys.stderr, "Processed %d tensors" % total
-        yield 1, c, x, pos
+    x = np.reshape(rows[:c], (c,2*param.flankingBaseNum+1,4,param.matrixNum))
+    for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
+    total += c; print >> sys.stderr, "Processed %d tensors" % total
+    yield 1, c, x, pos
 
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     tree = {}
     with open(bed_fn) as f:
         for row in f:
-            row = row.strip().split()
+            row = row.split()
             name = row[0]
             if name not in tree:
                 tree[name] = intervaltree.IntervalTree()
@@ -58,7 +61,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     Y = {}
     with open( var_fn ) as f:
         for row in f:
-            row = row.strip().split()
+            row = row.split()
             ctgName = row[0]
             pos = int(row[1])
             if len(tree[ctgName].search(pos)) == 0:
@@ -98,25 +101,19 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
 
     X = {}
     with open( tensor_fn ) as f:
+        total = 0
+        mat = np.empty(((2*param.flankingBaseNum+1)*4*param.matrixNum), dtype=np.float32)
         for row in f:
-            row = row.strip().split()
-            ctgName = row[0]
-            pos = int(row[1])
-            if ctgName not in tree:
-                continue
-            if len(tree[ctgName].search(pos)) == 0:
-                continue
-            key = ctgName + ":" + str(pos)
-            refSeq = row[2]
-            if refSeq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC
-                continue
+            chrom, coord, seq, mat = UnpackATensorRecord(*(row.split()))
+            if chrom not in tree: continue
+            if len(tree[chrom].search(int(coord))) == 0: continue
+            if seq[param.flankingBaseNum] not in ["A","C","G","T"]: continue
+            key = chrom + ":" + coord
 
-            x = np.reshape(np.array([float(x) for x in row[3:]]), (2*param.flankingBaseNum+1,4,param.matrixNum))
+            x = np.reshape(mat, (2*param.flankingBaseNum+1,4,param.matrixNum))
+            for i in range(1, param.matrixNum): x[:,:,i] -= x[:,:,0]
 
-            for i in range(1, param.matrixNum):
-                x[:,:,i] -= x[:,:,0]
-
-            X[key] = x
+            X[key] = np.copy(x)
 
             if key not in Y:
                 baseVec = [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]
@@ -126,6 +123,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
                 #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
                 baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
                 Y[key] = baseVec
+
+            total += 1; if total % 100000 == 0: print >> sys.stderr, "Processed %d tensors" % total
 
     allPos = sorted(X.keys())
     if shuffle == True:
