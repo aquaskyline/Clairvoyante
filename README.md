@@ -27,7 +27,7 @@ pip install tensorflow-gpu
 Clairvoyante was written in Python2. It can be translated to Python3 using "2to3" just like other projects. Just to mention that you need to use pip3 to install the dependencies listed above.  
 
 ### Speed up with PyPy
-Without a change to the code, using PyPy python intepreter on some tensorflow independent modules such as "dataPrepScripts/ExtractVariantCandidates.py" and "dataPrepScripts/CreateTensor.py" gives a 3-5 times speed up. Pypy python intepreter can be installed by apt-get, yum, Homebrew (I'm using this), Macports and etc. If you have no root access to your system, the offical website of Pypy provides a portable binary distribution for Linux. Following is a rundown extracted from Pypy's website on how to install the binaries.  
+Without a change to the code, using PyPy python intepreter on some tensorflow independent modules such as "dataPrepScripts/ExtractVariantCandidates.py" and "dataPrepScripts/CreateTensor.py" gives a 5-10 times speed up. Pypy python intepreter can be installed by apt-get, yum, Homebrew (I'm using this), Macports and etc. If you have no root access to your system, the offical website of Pypy provides a portable binary distribution for Linux. Following is a rundown extracted from Pypy's website on how to install the binaries.  
 ```
 wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.8-1-linux_x86_64-portable.tar.bz2
 tar -jxf pypy-5.8-1-linux_x86_64-portable.tar.bz2
