@@ -8,15 +8,15 @@ import os
 import re
 import shlex
 import subprocess
-import numpy as np
-#from sklearn import preprocessing
 import param
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
 base2num = dict(zip("ACGT", (0,1,2,3)))
+stripe2 = 4 * param.matrixNum
+stripe1 = param.matrixNum
 
 def GenerateTensor(ctgName, alns, center, refSeq):
-    alnCode = np.zeros( (2*param.flankingBaseNum+1, 4, param.matrixNum) )
+    alnCode = [0] * ( (2*param.flankingBaseNum+1) * 4 * param.matrixNum )
     for aln in alns:
         for refPos, queryAdv, refBase, queryBase in aln:
             if str(refBase) not in "ACGT-":
@@ -27,42 +27,27 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                 offset = refPos - center + (param.flankingBaseNum+1)
                 if queryBase != "-":
                     if refBase != "-":
-                        alnCode[offset][ base2num[refBase] ][0] += 1.0
-                        alnCode[offset][ base2num[queryBase] ][1] += 1.0
-                        alnCode[offset][ base2num[refBase] ][2] += 1.0
-                        alnCode[offset][ base2num[queryBase] ][3] += 1.0
-                        #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                        #    alnCode[offset][i][0] -= 0.333333
-                        #    alnCode[offset][i][2] -= 0.333333
-                        #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    alnCode[offset][i][1] -= 0.333333
-                        #    alnCode[offset][i][3] -= 0.333333
+                        alnCode[stripe2*offset + stripe1*base2num[refBase] + 0] += 1.0
+                        alnCode[stripe2*offset + stripe1*base2num[queryBase] + 1] += 1.0
+                        alnCode[stripe2*offset + stripe1*base2num[refBase] + 2] += 1.0
+                        alnCode[stripe2*offset + stripe1*base2num[queryBase] + 3] += 1.0
                     elif refBase == "-":
                         idx = min(offset+queryAdv, 2*param.flankingBaseNum+1-1)
-                        alnCode[idx][ base2num[queryBase] ][1] += 1.0
-                        #for i in [i for i in range(param.matrixNum) if i != base2num[queryBase]]:
-                        #    alnCode[idx][i][1] -= 0.333333
+                        alnCode[stripe2*idx + stripe1*base2num[queryBase] + 1] += 1.0
                     else:
                       print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 elif queryBase == "-":
                     if refBase != "-":
-                        alnCode[offset][ base2num[refBase] ][2] += 1.0
-                        #for i in [i for i in range(param.matrixNum) if i != base2num[refBase]]:
-                        #    alnCode[offset][i][2] -= 0.333333
+                        alnCode[stripe2*offset + stripe1*base2num[refBase] + 2] += 1.0
                     else:
                         print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
                 else:
                     print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
 
-    #for i in range(param.matrixNum):
-    #    alnCode[:,:,i] = preprocessing.normalize(alnCode[:,:,i])
-
-    outputLine = []
-    outputLine.append( "%s %d %s" %  (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum]) )
-    for x in np.reshape(alnCode, (2*param.flankingBaseNum+1)*4*param.matrixNum):
-        #outputLine.append("%0.3f" % x)
-        outputLine.append("%0.1f" % x)
-    return " ".join(outputLine)
+    outputLine = "%s %d %s" % (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum])
+    for x in alnCode:
+        outputLine += " %0.1f" % x
+    return outputLine
 
 def OutputAlnTensor(args):
 
