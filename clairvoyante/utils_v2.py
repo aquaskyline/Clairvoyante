@@ -124,7 +124,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
                 baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
                 Y[key] = baseVec
 
-            total += 1; if total % 100000 == 0: print >> sys.stderr, "Processed %d tensors" % total
+            total += 1
+            if total % 100000 == 0: print >> sys.stderr, "Processed %d tensors" % total
 
     allPos = sorted(X.keys())
     if shuffle == True:
