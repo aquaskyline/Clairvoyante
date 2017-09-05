@@ -121,7 +121,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
                 #          Base chng       Zygo.   Var type        Var length
                 #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
                 #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
-                baseVec[base2num[refSeq[param.flankingBaseNum]]] = 1.
+                baseVec[base2num[seq[param.flankingBaseNum]]] = 1.
                 Y[key] = baseVec
 
             total += 1
