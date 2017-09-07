@@ -92,7 +92,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             base1 = num2base[sortBase[0]]
             base2 = num2base[sortBase[1]]
             # Initialize other variables
-            refBase = ""; altBase = ""; inferredIndelLength = 0; info = [];
+            refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; info = [];
             # For SNP
             if varType == 1 or varType == 0: # SNP or REF
                 coordination = int(coordination)
@@ -101,18 +101,17 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                     altBase = base1 if base1 != refBase else base2
                 elif varType == 0: # REF
                     altBase = refBase
+                dp = sum(XBatch[j,param.flankingBaseNum,:,0] + XBatch[j,param.flankingBaseNum,:,3])
             elif varType == 2: # INS
                 # infer the insertion length
                 if varLength == 0: varLength = 1
+                dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,1])
                 if varLength != maxVarLength:
                     for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
-                        referenceTensor = XBatch[j,k,:,0]
-                        insertionTensor = XBatch[j,k,:,1]
-                        altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
+                        altBase += num2base[np.argmax(XBatch[j,k,:,0]+XBatch[j,k,:,1])]
                 else:
                     for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
-                        referenceTensor = XBatch[j,k,:,0]
-                        insertionTensor = XBatch[j,k,:,1]
+                        referenceTensor = XBatch[j,k,:,0]; insertionTensor = XBatch[j,k,:,1]
                         if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
                             inferredIndelLength += 1
                             altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
@@ -128,12 +127,11 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                     altBase = refBase + altBase
             elif varType == 3: # DEL
                 if varLength == 0: varLength = 1
+                dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,2])
                 # infer the deletion length
                 if varLength == maxVarLength:
                     for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
-                        referenceTensor = XBatch[j,k,:,0]
-                        deletionTensor = XBatch[j,k,:,2]
-                        if k < (param.flankingBaseNum + maxVarLength) or sum(deletionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
+                        if k < (param.flankingBaseNum + maxVarLength) or sum(XBatch[j,k,:,2]) >= (inferIndelLengthMinimumAF * sum(XBatch[j,k,:,0])):
                             inferredIndelLength += 1
                         else:
                             break
@@ -158,7 +156,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             elif varZygosity == 0: gtStr = "0/1"
             elif varZygosity == 1: gtStr = "1/1"
 
-            print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ\t%s:%d" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual)
+            print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ:DP\t%s:%d:%d" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual, dp)
 
 
 def PrintVCFHeader(args, call_fh):
@@ -169,6 +167,7 @@ def PrintVCFHeader(args, call_fh):
     print >> call_fh, '##INFO=<ID=LENGUESS,Number=.,Type=Integer,Description="Best guess of the indel length">'
     print >> call_fh, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     print >> call_fh, '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">'
+    print >> call_fh, '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">'
     print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sample_name)
 
 def Test(args, m, utils):
