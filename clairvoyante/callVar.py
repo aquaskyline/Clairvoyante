@@ -6,14 +6,17 @@ import param
 import logging
 import numpy as np
 from threading import Thread
-from copy import copy
+from copy import deepcopy
+from math import log
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 num2base = dict(zip((0, 1, 2, 3), "ACGT"))
 v1Type2Name = dict(zip((0, 1, 2, 3, 4), ('HET', 'HOM', 'INS', 'DEL', 'REF')))
 v2Zygosity2Name = dict(zip((0, 1), ('HET', 'HOM')))
 v2Type2Name = dict(zip((0, 1, 2, 3), ('REF', 'SNP', 'INS', 'DEL')))
-v2Length2Name = dict(zip((0, 1, 2, 3, 4, 5), ('0', '1', '2', '3', '4', '>4')))
+v2Length2Name = dict(zip((0, 1, 2, 3, 4, 5), ('0', '1', '2', '3', '4', '4+')))
+maxVarLength = 5
+inferIndelLengthMinimumAF = 0.125
 
 def Run(args):
     # create a Clairvoyante
@@ -44,7 +47,7 @@ def Run(args):
     Test(args, m, utils)
 
 
-def Output(args, call_fh, num, posBatch, base, z, t, l):
+def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
     if args.v1 == True:
         if num != len(base):
           sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
@@ -61,7 +64,7 @@ def Output(args, call_fh, num, posBatch, base, z, t, l):
             varTypeName = v1Type2Name[np.argmax(t[j])]
             if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
             else: outBase = "%s%s" % (base1, base1)
-            print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varTypeName
+            print >> call_fh, " ".join(posBatch[j].split(":")), outBase, varTypeName
 
     elif args.v2 == True or args.v3 == True:
         if num != len(base):
@@ -72,29 +75,115 @@ def Output(args, call_fh, num, posBatch, base, z, t, l):
         #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
         for j in range(len(base)):
             if args.show_ref == False and np.argmax(t[j]) == 0: continue
+            # Get variant type, 0:REF, 1:SNP, 2:INS, 3:DEL
+            varType = np.argmax(t[j])
+            # Get zygosity, 0:HET, 1:HOM
+            varZygosity = np.argmax(z[j])
+            # Get Indel Length, 0:0, 1:1, 2:2, 3:3, 4:4, 5:>4
+            varLength = np.argmax(l[j])
+            # Get chromosome, coordination and reference bases with flanking param.flankingBaseNum flanking bases at coordination
+            chromosome, coordination, refSeq = posBatch[j].split(":")
+            # Get genotype quality
+            sortVarType = np.sort(t[j])[::-1]
+            qual = int(-4.343 * log((sortVarType[1] + 1e-10) / (sortVarType[0] + 1e-10)))
+            if qual > 99: qual = 99
+            # Get possible alternative bases
             sortBase = base[j].argsort()[::-1]
             base1 = num2base[sortBase[0]]
             base2 = num2base[sortBase[1]]
-            if(base1 > base2): base1, base2 = base2, base1
-            if np.argmax(z[j]) == 0: outBase = "%s%s" % (base1, base2)
-            else: outBase = "%s%s" % (base1, base1)
-            varZygosityName = v2Zygosity2Name[np.argmax(z[j])]
-            varTypeName = v2Type2Name[np.argmax(t[j])]
-            varLength = v2Length2Name[np.argmax(l[j])]
-            print >> call_fh, " ".join(posBatch[j].split("-")), outBase, varZygosityName, varTypeName, varLength
+            # Initialize other variables
+            refBase = ""; altBase = ""; inferredIndelLength = 0; info = [];
+            # For SNP
+            if varType == 1 or varType == 0: # SNP or REF
+                coordination = int(coordination)
+                refBase = refSeq[param.flankingBaseNum]
+                if varType == 1: # SNP
+                    altBase = base1 if base1 != refBase else base2
+                elif varType == 0: # REF
+                    altBase = refBase
+            elif varType == 2: # INS
+                # infer the insertion length
+                if varLength == 0: varLength = 1
+                if varLength != maxVarLength:
+                    for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
+                        referenceTensor = XBatch[j,k,:,0]
+                        insertionTensor = XBatch[j,k,:,1]
+                        altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
+                else:
+                    for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
+                        referenceTensor = XBatch[j,k,:,0]
+                        insertionTensor = XBatch[j,k,:,1]
+                        if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
+                            inferredIndelLength += 1
+                            altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
+                        else:
+                            break
+                coordination = int(coordination)
+                refBase = refSeq[param.flankingBaseNum]
+                # insertions longer than (param.flankingBaseNum-1) are marked SV
+                if inferredIndelLength >= param.flankingBaseNum:
+                    altBase = "<INS>"
+                    info.append("SVTYPE=INS")
+                else:
+                    altBase = refBase + altBase
+            elif varType == 3: # DEL
+                if varLength == 0: varLength = 1
+                # infer the deletion length
+                if varLength == maxVarLength:
+                    for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
+                        referenceTensor = XBatch[j,k,:,0]
+                        deletionTensor = XBatch[j,k,:,2]
+                        if k < (param.flankingBaseNum + maxVarLength) or sum(deletionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
+                            inferredIndelLength += 1
+                        else:
+                            break
+                # deletions longer than (param.flankingBaseNum-1) are marked SV
+                coordination = int(coordination)
+                if inferredIndelLength >= param.flankingBaseNum:
+                    refBase = refSeq[param.flankingBaseNum]
+                    altBase = "<DEL>"
+                    info.append("SVTYPE=DEL")
+                elif varLength != maxVarLength:
+                    refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+varLength+1]
+                    altBase = refSeq[param.flankingBaseNum]
+                else:
+                    refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+inferredIndelLength+1]
+                    altBase = refSeq[param.flankingBaseNum]
+            if inferredIndelLength > 0 and inferredIndelLength < param.flankingBaseNum: info.append("LENGUESS=%d" % inferredIndelLength)
+            infoStr = ""
+            if len(info) == 0: infoStr = "."
+            else: infoStr = ";".join(info)
+            gtStr = ""
+            if varType == 0: gtStr = "0/0"
+            elif varZygosity == 0: gtStr = "0/1"
+            elif varZygosity == 1: gtStr = "1/1"
 
+            print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ\t%s:%d" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual)
+
+
+def PrintVCFHeader(args, call_fh):
+    print >> call_fh, '##fileformat=VCFv4.1'
+    print >> call_fh, '##ALT=<ID=DEL,Description="Deletion">'
+    print >> call_fh, '##ALT=<ID=INS,Description="Insertion of novel sequence">'
+    print >> call_fh, '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">'
+    print >> call_fh, '##INFO=<ID=LENGUESS,Number=.,Type=Integer,Description="Best guess of the indel length">'
+    print >> call_fh, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+    print >> call_fh, '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">'
+    print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sample_name)
 
 def Test(args, m, utils):
     call_fh = open(args.call_fn, "w")
+    if args.v2 == True or args.v3 == True:
+        PrintVCFHeader(args, call_fh)
     tensorGenerator = utils.GetTensor( args.tensor_fn, param.predictBatchSize )
     logging.info("Calling variants ...")
     predictStart = time.time()
     end = 0; end2 = 0; terminate = 0
     end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
     m.predictNoRT(XBatch2)
-    base = copy(m.predictBaseRTVal); z = copy(m.predictZygosityRTVal); t = copy(m.predictVarTypeRTVal); l = copy(m.predictIndelLengthRTVal)
+    base = deepcopy(m.predictBaseRTVal); z = deepcopy(m.predictZygosityRTVal); t = deepcopy(m.predictVarTypeRTVal); l = deepcopy(m.predictIndelLengthRTVal)
     if end2 == 0:
-        end = end2; num = num2; posBatch = posBatch2
+        end = end2; num = num2; XBatch = deepcopy(XBatch2); posBatch = deepcopy(posBatch2)
         end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
         while True:
             if end == 1:
@@ -102,23 +191,21 @@ def Test(args, m, utils):
             threadPool = []
             if end == 0:
                 threadPool.append(Thread(target=m.predictNoRT, args=(XBatch2, )))
-            threadPool.append(Thread(target=Output, args=(args, call_fh, num, posBatch, base, z, t, l, )))
+            threadPool.append(Thread(target=Output, args=(args, call_fh, num, XBatch, posBatch, base, z, t, l, )))
             for t in threadPool: t.start()
             if end2 == 0:
                 end3, num3, XBatch3, posBatch3 = next(tensorGenerator)
             for t in threadPool: t.join()
-            base = copy(m.predictBaseRTVal); z = copy(m.predictZygosityRTVal); t = copy(m.predictVarTypeRTVal); l = copy(m.predictIndelLengthRTVal)
+            base = deepcopy(m.predictBaseRTVal); z = deepcopy(m.predictZygosityRTVal); t = deepcopy(m.predictVarTypeRTVal); l = deepcopy(m.predictIndelLengthRTVal)
             if end == 0:
-                end = end2; num = num2; posBatch = posBatch2
+                end = end2; num = num2; XBatch = deepcopy(XBatch2); posBatch = deepcopy(posBatch2)
             if end2 == 0:
-                end2 = end3; num2 = num3; XBatch2 = XBatch3; posBatch2 = posBatch3
+                end2 = end3; num2 = num3; XBatch2 = deepcopy(XBatch3); posBatch2 = deepcopy(posBatch3)
             #print >> sys.stderr, end, end2, end3, terminate
             if terminate == 1:
                 break
     elif end2 == 1:
-        Output(args, call_fh, num2, posBatch2, base, z, t, l)
-
-
+        Output(args, call_fh, num2, XBatch2, posBatch2, base, z, t, l)
 
     logging.info("Total time elapsed: %.2f s" % (time.time() - predictStart))
 
@@ -137,6 +224,12 @@ if __name__ == "__main__":
     parser.add_argument('--call_fn', type=str, default = None,
             help="Output variant predictions")
 
+    parser.add_argument('--sample_name', type=str, default = "SAMPLE",
+            help="Define the sample name to be shown in the VCF file")
+
+    parser.add_argument('--show_ref', type=bool, default = False,
+            help="Show reference calls, optional")
+
     parser.add_argument('--v3', type=bool, default = True,
             help="Use Clairvoyante version 3")
 
@@ -148,9 +241,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")
-
-    parser.add_argument('--show_ref', type=bool, default = False,
-            help="Show reference calls, optional")
 
     args = parser.parse_args()
 

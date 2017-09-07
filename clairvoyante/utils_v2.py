@@ -29,7 +29,7 @@ def GetTensor( tensor_fn, num ):
         chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
             continue
-        pos.append(chrom + ":" + coord)
+        pos.append(chrom + ":" + coord + ":" + seq)
         c += 1
 
         if c == num:

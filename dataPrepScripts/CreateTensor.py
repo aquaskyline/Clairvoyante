@@ -62,10 +62,9 @@ def OutputAlnTensor(args):
 
     refSeq = None
     ref_fp = open(ref_fn, 'r')
-    for name, seq, qual in readfq(ref_fp):
+    for name, refSeq, _ in readfq(ref_fp):
         if name != ctgName:
             continue
-        refSeq = seq
         break
 
     if refSeq == None:

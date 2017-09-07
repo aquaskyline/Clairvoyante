@@ -31,15 +31,16 @@ def bufcount(filename):
 def Pair(args):
     logging.info("Loading BED file ...")
     tree = {}
-    with open(args.bed_fn) as f:
-        for row in f:
-            row = row.strip().split()
-            name = row[0]
-            if name not in tree:
-                tree[name] = intervaltree.IntervalTree()
-            begin = int(row[1])
-            end = int(row[2])
-            tree[name].addi(begin, end)
+    if args.bed_fn != None:
+        with open(args.bed_fn) as f:
+            for row in f:
+                row = row.strip().split()
+                name = row[0]
+                if name not in tree:
+                    tree[name] = intervaltree.IntervalTree()
+                begin = int(row[1])
+                end = int(row[2])
+                tree[name].addi(begin, end)
 
     logging.info("Counting the number of Truth Variants in %s ..." % args.tensor_var_fn)
     v = 0
@@ -63,10 +64,11 @@ def Pair(args):
             row = row.strip().split()
             ctgName = row[0]
             pos = int(row[1])
-            if ctgName not in tree:
-                continue
-            if len(tree[ctgName].search(pos)) == 0:
-                continue
+            if args.bed_fn != None:
+                if ctgName not in tree:
+                    continue
+                if len(tree[ctgName].search(pos)) == 0:
+                    continue
             key = "-".join([ctgName, str(pos)])
             if key in d:
                 continue
@@ -92,10 +94,11 @@ def Pair(args):
             row = rawRow.split()
             ctgName = row[0]
             pos = int(row[1])
-            if ctgName not in tree:
-                continue
-            if len(tree[ctgName].search(pos)) == 0:
-                continue
+            if args.bed_fn != None:
+                if ctgName not in tree:
+                    continue
+                if len(tree[ctgName].search(pos)) == 0:
+                    continue
             key = "-".join([ctgName, str(pos)])
             if key in d:
                 continue
