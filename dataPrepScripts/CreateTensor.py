@@ -75,7 +75,7 @@ def OutputAlnTensor(args):
     beginToEnd = {}
     with open(can_fn) as f:
         for row in f.readlines():
-            row = row.strip().split()
+            row = row.split()
             pos = int(row[1])
             beginToEnd[ pos-(param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
 
@@ -88,7 +88,7 @@ def OutputAlnTensor(args):
     tensor_fp = open(tensor_fn, "w")
 
     for l in p.stdout:
-        l = l.strip().split()
+        l = l.split()
         if l[0][0] == "@":
             continue
 
@@ -157,9 +157,8 @@ def OutputAlnTensor(args):
                 del centerToAln[center]
 
     for center in centerToAln.keys():
-        if center + (param.flankingBaseNum+1) < POS:
-            l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
-            print >> tensor_fp, l
+        l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
+        print >> tensor_fp, l
 
 
 if __name__ == "__main__":

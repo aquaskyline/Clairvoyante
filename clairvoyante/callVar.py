@@ -91,6 +91,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             sortBase = base[j].argsort()[::-1]
             base1 = num2base[sortBase[0]]
             base2 = num2base[sortBase[1]]
+            if(base1 > base2): base1, base2 = base2, base1
             # Initialize other variables
             refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; info = [];
             # For SNP
