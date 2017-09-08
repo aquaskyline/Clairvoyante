@@ -58,11 +58,9 @@ python ../clairvoyante/callVar.py --chkpnt_fn ../trainedModels/fullv3-illumina-b
 less tensor_can_chr21.call
 ```
 
-## Variant call output format
-chromosome position genotype zygosity type indeLength  
-zygosity: HET or HOM  
-type: SNP, INS or DEL  
-indelLength: 0, 1, 2, 3, 4, >4  
+## VCF output format
+clairvoyante/callVar.py outputs variants in VCF format with version 4.1 specifications.  
+Clairvoyante can predict the exact length of insertions and deletions shorter than or equal to 4bp. For insertions and deletions with a length between 5bp to 15bp, callVar guesses the length from input tensors. The indels with guessed length are denoted with a 'LENGUESS' info tag. Although the guessed indel length might be incorrect, users can still benchmark Clairvoyante's sensitivity by matching the indel positions to other callsets. For indels longer than 15bp, callVar.py outputs them as SV without providing an alternative allele. To fit into a different usage scenario, Clairvoyante allows users to extend its model easily to support exact length prediction on longer indels by adding categories to the model output. However, this requires additional training data on the new categories. Users can also increase the length limit from where an indel is outputted as a SV by increasing the parameter flankingBaseNum from 16bp to a higher value. This extends the flanking bases to be considered with a candidate variant. 
 
 ## Quick start with model training
 ```
