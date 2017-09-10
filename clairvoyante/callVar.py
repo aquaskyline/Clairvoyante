@@ -91,7 +91,6 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             sortBase = base[j].argsort()[::-1]
             base1 = num2base[sortBase[0]]
             base2 = num2base[sortBase[1]]
-            if(base1 > base2): base1, base2 = base2, base1
             # Initialize other variables
             refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; info = [];
             # For SNP
@@ -100,6 +99,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                 refBase = refSeq[param.flankingBaseNum]
                 if varType == 1: # SNP
                     altBase = base1 if base1 != refBase else base2
+                    #altBase = "%s,%s" % (base1, base2)
                 elif varType == 0: # REF
                     altBase = refBase
                 dp = sum(XBatch[j,param.flankingBaseNum,:,0] + XBatch[j,param.flankingBaseNum,:,3])
@@ -109,13 +109,19 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                 dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,1])
                 if varLength != maxVarLength:
                     for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
-                        altBase += num2base[np.argmax(XBatch[j,k,:,0]+XBatch[j,k,:,1])]
+                        if varZygosity == 1:
+                            altBase += num2base[np.argmax(XBatch[j,k,:,0]+XBatch[j,k,:,1])]
+                        elif varZygosity == 0:
+                            altBase += num2base[np.argmax(XBatch[j,k,:,1])]
                 else:
                     for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
                         referenceTensor = XBatch[j,k,:,0]; insertionTensor = XBatch[j,k,:,1]
                         if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
                             inferredIndelLength += 1
-                            altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
+                            if varZygosity == 1:
+                                altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
+                            elif varZygosity == 0:
+                                altBase += num2base[np.argmax(insertionTensor)]
                         else:
                             break
                 coordination = int(coordination)
