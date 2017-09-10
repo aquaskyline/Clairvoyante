@@ -77,8 +77,8 @@ def OutputAlnTensor(args):
         for row in f.readlines():
             row = row.split()
             pos = int(row[1])
-            if pos < ctgStart: continue
-            if pos > ctgEnd: continue
+            if ctgStart != None and pos < ctgStart: continue
+            if ctgEnd != None and pos > ctgEnd: continue
             beginToEnd[ pos-(param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
 
     p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
