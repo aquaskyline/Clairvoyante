@@ -83,7 +83,7 @@ def OutputAlnTensor(args):
                 beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
             elif args.considerleftedge == True:
                 for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
-                    beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
+                    beginToEnd[ i ] = (pos + (param.flankingBaseNum+1), pos)
 
     p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if ctgStart and ctgEnd\
