@@ -79,7 +79,11 @@ def OutputAlnTensor(args):
             pos = int(row[1])
             if ctgStart != None and pos < ctgStart: continue
             if ctgEnd != None and pos > ctgEnd: continue
-            beginToEnd[ pos-(param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
+            if args.considerleftedge == False:
+                beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
+            elif args.considerleftedge == True:
+                for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
+                    beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
 
     p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if ctgStart and ctgEnd\
@@ -116,10 +120,11 @@ def OutputAlnTensor(args):
                     matches.append( (refPos, SEQ[queryPos]) )
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
-                        endToCenter[rEnd] = rCenter
-                        activeSet.add(rCenter)
-                        centerToAln.setdefault(rCenter, [])
-                        centerToAln[rCenter].append([])
+                        if rCenter not in activeSet:
+                            endToCenter[rEnd] = rCenter
+                            activeSet.add(rCenter)
+                            centerToAln.setdefault(rCenter, [])
+                            centerToAln[rCenter].append([])
                     for center in list(activeSet):
                         centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], SEQ[queryPos] ) )
                     if refPos in endToCenter:
@@ -142,10 +147,11 @@ def OutputAlnTensor(args):
                         centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], "-" ))
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
-                        endToCenter[rEnd] = rCenter
-                        activeSet.add(rCenter)
-                        centerToAln.setdefault(rCenter, [])
-                        centerToAln[rCenter].append([])
+                        if rCenter not in activeSet:
+                            endToCenter[rEnd] = rCenter
+                            activeSet.add(rCenter)
+                            centerToAln.setdefault(rCenter, [])
+                            centerToAln[rCenter].append([])
                     if refPos in endToCenter:
                         center = endToCenter[refPos]
                         activeSet.remove(center)
@@ -191,6 +197,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--samtools', type=str, default="samtools",
             help="Path to the 'samtools', default: %(default)s")
+
+    parser.add_argument('--considerleftedge', type=bool, default=False,
+            help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
 
     args = parser.parse_args()
 
