@@ -73,17 +73,19 @@ def OutputAlnTensor(args):
 
 
     beginToEnd = {}
-    with open(can_fn) as f:
-        for row in f.readlines():
-            row = row.split()
-            pos = int(row[1])
-            if ctgStart != None and pos < ctgStart: continue
-            if ctgEnd != None and pos > ctgEnd: continue
-            if args.considerleftedge == False:
-                beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
-            elif args.considerleftedge == True:
-                for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
-                    beginToEnd[ i ] = (pos + (param.flankingBaseNum+1), pos)
+    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (can_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+    for row in f.stdout:
+        row = row.split()
+        pos = int(row[1])
+        if ctgStart != None and pos < ctgStart: continue
+        if ctgEnd != None and pos > ctgEnd: continue
+        if args.considerleftedge == False:
+            beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
+        elif args.considerleftedge == True:
+            for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
+                beginToEnd[ i ] = (pos + (param.flankingBaseNum+1), pos)
+    f.stdout.close()
+    f.wait()
 
     p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if ctgStart and ctgEnd\
@@ -91,7 +93,8 @@ def OutputAlnTensor(args):
 
     centerToAln = {}
 
-    tensor_fp = open(tensor_fn, "w")
+    tensor_fpo = open(tensor_fn, "wb")
+    tensor_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=tensor_fpo, stderr=sys.stderr, bufsize=8388608)
 
     for l in p.stdout:
         l = l.split()
@@ -161,12 +164,20 @@ def OutputAlnTensor(args):
         for center in centerToAln.keys():
             if center + (param.flankingBaseNum+1) < POS:
                 l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
-                print >> tensor_fp, l
+                tensor_fp.stdin.write(l)
+                tensor_fp.stdin.write("\n")
                 del centerToAln[center]
 
     for center in centerToAln.keys():
         l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
-        print >> tensor_fp, l
+        tensor_fp.stdin.write(l)
+        tensor_fp.stdin.write("\n")
+
+    p.stdout.close()
+    p.wait()
+    tensor_fp.stdin.close()
+    tensor_fp.wait()
+    tensor_fpo.close()
 
 
 if __name__ == "__main__":

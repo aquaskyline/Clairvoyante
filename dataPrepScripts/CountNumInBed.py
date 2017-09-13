@@ -16,31 +16,35 @@ def Calc(args):
 
     logging.info("Loading BED file ...")
     tree = {}
-    with open(args.bed_fn) as f:
-        for row in f:
-            row = row.strip().split()
-            name = row[0]
-            if name not in tree:
-                tree[name] = intervaltree.IntervalTree()
-            begin = int(row[1])
-            end = int(row[2])
-            tree[name].addi(begin, end)
+    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+    for row in f.stdout:
+        row = row.strip().split()
+        name = row[0]
+        if name not in tree:
+            tree[name] = intervaltree.IntervalTree()
+        begin = int(row[1])
+        end = int(row[2])
+        tree[name].addi(begin, end)
+    f.stdout.close()
+    f.wait()
 
     logging.info("Counting number of records in bed regions ...")
 
     a = 0
     o = 0
-    with open(args.input_fn) as f:
-        for row in f:
-            a += 1
-            row = row.strip().split()
-            ctgName = row[0]
-            pos = int(row[1])
-            if ctgName not in tree:
-                continue
-            if len(tree[ctgName].search(pos)) == 0:
-                continue
-            o += 1
+    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.input_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+    for row in f.stdout:
+        a += 1
+        row = row.strip().split()
+        ctgName = row[0]
+        pos = int(row[1])
+        if ctgName not in tree:
+            continue
+        if len(tree[ctgName].search(pos)) == 0:
+            continue
+        o += 1
+    f.stdout.close()
+    f.wait()
 
     logging.info("Total: %d, Overlapped: %d, Percentage: %.3f" % (a, o, float(o)/a*100) )
 

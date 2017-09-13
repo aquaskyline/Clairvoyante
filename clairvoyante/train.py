@@ -129,6 +129,10 @@ def TrainAll(args, m, utils):
             logging.info(" ".join([str(i), "Training loss:", str(trainLossSum/trainingTotal), "Validation loss: ", str(validationLossSum/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             validationLosses.append( (validationLossSum, i) )
+            # Output the model
+            if args.ochk_prefix != None:
+                parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
+                m.saveParameters(parameterOutputPath % i)
             # Adaptive learning rate decay
             c += 1
             flag = 0
@@ -148,9 +152,6 @@ def TrainAll(args, m, utils):
                 else:
                     flag = 1
             if flag == 1:
-                if args.ochk_prefix != None:
-                    parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
-                    m.saveParameters(parameterOutputPath % i)
                 maxLearningRateSwitch -= 1
                 if maxLearningRateSwitch == 0:
                   break

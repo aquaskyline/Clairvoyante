@@ -61,7 +61,8 @@ def MakeCandidates( args ):
     pileup = {}
     sweep = 0
 
-    can_fp = open(can_fn, "w")
+    can_fpo = open(can_fn, "wb")
+    can_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=can_fpo, stderr=sys.stderr, bufsize=8388608)
 
     for l in p.stdout:
         l = l.strip().split()
@@ -122,7 +123,8 @@ def MakeCandidates( args ):
             out = OutputCandidate(ctgName, sweep, baseCount, refBase, minCoverage, threshold)
             if out != None:
                 totalCount, outline = out
-                print >> can_fp, outline
+                can_fp.stdin.write(outline)
+                can_fp.stdin.write("\n")
             del pileup[sweep]
             sweep += 1;
 
@@ -135,7 +137,14 @@ def MakeCandidates( args ):
         out = OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold)
         if out != None:
             totalCount, outline = out
-            print >> can_fp, outline
+            can_fp.stdin.write(outline)
+            can_fp.stdin.write("\n")
+
+    p.stdout.close()
+    p.wait()
+    can_fp.stdin.close()
+    can_fp.wait()
+    can_fpo.close()
 
 
 if __name__ == "__main__":
