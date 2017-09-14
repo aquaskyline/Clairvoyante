@@ -101,6 +101,8 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 
 ## Folder Stucture and Program Descriptions
 *You can also run the program to get the parameter details.*
+
+
 `dataPrepScripts/` | Data Preparation Scripts. Outputs are gzipped unless using standard output. Scripts in the folder are compatible with `pypy`.
 --- | ---
 `├── ExtractVariantCandidates.py`| Extract the position of variant candidiates. Input: BAM; Reference FASTA. Important options: --threshold "Minimum alternative allelic fraction to report a candidate"; --minCoverage "Minimum coverage to report a candidate".
@@ -112,6 +114,7 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 `├── param.py`| Global parameters for the scripts in the folder.
 `├── PrepDataBeforeDemo.sh`| A **Demo** showing how to prepare data for model training.
 `└── PrepDataBeforeDemo.pypy.sh`| The same demo but using pypy in place of python. `pypy` is highly recommended. It's easy to install, and makes the scripts run 5-10 times faster.
+
 
 `clairvoyante/` | Model Training and Variant Caller Scripts. Scripts in the folder are NOT compatible with `pypy`.
 --- | ---
@@ -129,6 +132,8 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 ├── `clairvoyante_v3.py` | Clairvoyante netowork topology v3.
 ├── `clairvoyante_v3_slim.py` | Clairvoyante netowork topology v3 slim. With 10 times less parameters than the full network, it trains about 1.5 times faster than the full network. It performs only about 1% less in precision and recall rates for Illumina data.
 └── `utils\_v2.py` | Helper functions to the netowork.
+
+
 *GIAB provides a BED file that marks the high confidence regions in the reference. The models perform better by using only the truth variants in these regions for training. If you don't have a BED file, you can input a BED file that covers the whole genome.*
 ***
 
