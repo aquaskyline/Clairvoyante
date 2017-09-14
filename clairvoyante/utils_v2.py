@@ -15,6 +15,7 @@ base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
 def SetupEnv():
     os.environ["CXX"] = "g++"
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     blosc.set_nthreads(4)
     gc.enable()
 
@@ -22,12 +23,16 @@ def UnpackATensorRecord(a, b, c, *d):
     return a, b, c, np.array(d, dtype=np.float32)
 
 def GetTensor( tensor_fn, num ):
-    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (tensor_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+    if tensor_fn != "PIPE":
+        f = subprocess.Popen(shlex.split("gzip -fdc %s" % (tensor_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        fo = f.stdout
+    else:
+        fo = sys.stdin
     total = 0
     c = 0
     rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
     pos = []
-    for row in f.stdout: # A variant per row
+    for row in fo: # A variant per row
         chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
             continue
@@ -42,8 +47,9 @@ def GetTensor( tensor_fn, num ):
             c = 0
             pos = []
 
-    f.stdout.close()
-    f.wait()
+    if tensor_fn != "PIPE":
+        fo.close()
+        f.wait()
     x = np.reshape(rows[:c], (c,2*param.flankingBaseNum+1,4,param.matrixNum))
     for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
     total += c; print >> sys.stderr, "Processed %d tensors" % total

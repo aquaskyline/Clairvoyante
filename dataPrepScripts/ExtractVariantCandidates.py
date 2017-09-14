@@ -4,7 +4,6 @@ import sys
 sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
 from readfq import readfq
 import argparse
-import os
 import re
 import shlex
 import subprocess
@@ -13,7 +12,6 @@ from math import log
 cigarRe = r"(\d+)([MIDNSHP=X])"
 
 def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
-
     totalCount = 0
     totalCount += sum(x[1] for x in baseCount)
     if totalCount < minCoverage:
@@ -31,38 +29,39 @@ def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
     else:
         return None
 
+
+class CandidateStdout(object):
+    def __init__(self, handle):
+        self.stdin = handle
+
+    def __del__(self):
+        self.stdin.close()
+
+
 def MakeCandidates( args ):
-
-    bam_fn = args.bam_fn
-    can_fn = args.can_fn
-    threshold = args.threshold
-    minCoverage = args.minCoverage
-    ctgName = args.ctgName
-    ctgStart = args.ctgStart
-    ctgEnd = args.ctgEnd
-    samtools = args.samtools
-    ref_fn = args.ref_fn
-
-    ref_fp = open(ref_fn, 'r')
+    ref_fp = open(args.ref_fn, 'r')
     refSeq = None
     for name, refSeq, _ in readfq(ref_fp):
-        if name != ctgName:
+        if name != args.ctgName:
             continue
         break
 
     if refSeq == None:
-        print >> sys.stderr, "Cannot find reference sequence %s" % (ctgName)
+        print >> sys.stderr, "Cannot find reference sequence %s" % (args.ctgName)
         sys.exit(1)
 
-    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
-        if ctgStart and ctgEnd\
-        else subprocess.Popen(shlex.split("%s view %s %s" % (samtools, bam_fn, ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+        if args.ctgStart and args.ctgEnd\
+        else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     pileup = {}
     sweep = 0
 
-    can_fpo = open(can_fn, "wb")
-    can_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=can_fpo, stderr=sys.stderr, bufsize=8388608)
+    if args.can_fn != "PIPE":
+        can_fpo = open(args.can_fn, "wb")
+        can_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=can_fpo, stderr=sys.stderr, bufsize=8388608)
+    else:
+        can_fp = CandidateStdout(sys.stdout)
 
     for l in p.stdout:
         l = l.strip().split()
@@ -71,7 +70,7 @@ def MakeCandidates( args ):
 
         QNAME = l[0]
         RNAME = l[2]
-        if RNAME != ctgName:
+        if RNAME != args.ctgName:
             continue
 
         FLAG = int(l[1])
@@ -104,7 +103,7 @@ def MakeCandidates( args ):
                     refPos += 1
                     queryPos += 1
                 for pos, base in matches:
-                    pileup.setdefault(pos, {"A":0, "C":0, "G":0, "T":0, "N": 0})
+                    pileup.setdefault(pos, {"A":0, "C":0, "G":0, "T":0, "N":0})
                     pileup[pos][base] += 1
             elif m.group(2) == "I":
                 for i in range(advance):
@@ -120,7 +119,7 @@ def MakeCandidates( args ):
                 continue
             baseCount = pileup[sweep].items()
             refBase = refSeq[sweep]
-            out = OutputCandidate(ctgName, sweep, baseCount, refBase, minCoverage, threshold)
+            out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
                 totalCount, outline = out
                 can_fp.stdin.write(outline)
@@ -134,7 +133,7 @@ def MakeCandidates( args ):
     for pos in remainder:
         baseCount = pileup[pos].items()
         refBase = refSeq[pos]
-        out = OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold)
+        out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
             totalCount, outline = out
             can_fp.stdin.write(outline)
@@ -142,9 +141,10 @@ def MakeCandidates( args ):
 
     p.stdout.close()
     p.wait()
-    can_fp.stdin.close()
-    can_fp.wait()
-    can_fpo.close()
+    if args.can_fn != "PIPE":
+        can_fp.stdin.close()
+        can_fp.wait()
+        can_fpo.close()
 
 
 if __name__ == "__main__":
@@ -157,8 +157,8 @@ if __name__ == "__main__":
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
 
-    parser.add_argument('--can_fn', type=str, default="pileup.out",
-            help="Pile-up count output, default: %(default)s")
+    parser.add_argument('--can_fn', type=str, default="PIPE",
+            help="Pile-up count output, use PIPE for standard output, default: %(default)s")
 
     parser.add_argument('--threshold', type=float, default=0.125,
             help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: %(default)f")

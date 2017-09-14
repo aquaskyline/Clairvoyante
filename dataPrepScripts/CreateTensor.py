@@ -49,52 +49,65 @@ def GenerateTensor(ctgName, alns, center, refSeq):
         outputLine += " %0.1f" % x
     return outputLine
 
-def OutputAlnTensor(args):
-
-    bam_fn = args.bam_fn
-    can_fn = args.can_fn
-    ctgName = args.ctgName
-    ctgStart = args.ctgStart
-    ctgEnd = args.ctgEnd
-    samtools = args.samtools
-    ref_fn = args.ref_fn
-    tensor_fn = args.tensor_fn
-
-    refSeq = None
-    ref_fp = open(ref_fn, 'r')
-    for name, refSeq, _ in readfq(ref_fp):
-        if name != ctgName:
-            continue
-        break
-
-    if refSeq == None:
-        print >> sys.stderr, "Cannot find reference sequence %s" % (ctgName)
-        sys.exit(1)
-
-
-    beginToEnd = {}
-    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (can_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
-    for row in f.stdout:
+def GetCandidate(args, beginToEnd):
+    if args.can_fn != "PIPE":
+        f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.can_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        fo = f.stdout
+    else:
+        fo = sys.stdin
+    for row in fo:
         row = row.split()
         pos = int(row[1])
-        if ctgStart != None and pos < ctgStart: continue
-        if ctgEnd != None and pos > ctgEnd: continue
+        if args.ctgStart != None and pos < args.ctgStart: continue
+        if args.ctgEnd != None and pos > args.ctgEnd: continue
         if args.considerleftedge == False:
             beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
         elif args.considerleftedge == True:
             for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
                 beginToEnd[ i ] = (pos + (param.flankingBaseNum+1), pos)
-    f.stdout.close()
-    f.wait()
+        yield pos
 
-    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (samtools, bam_fn, ctgName, ctgStart, ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
-        if ctgStart and ctgEnd\
-        else subprocess.Popen(shlex.split("%s view %s %s" % (samtools, bam_fn, ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+    if args.can_fn != "PIPE":
+        fo.close()
+        f.wait()
+    yield -1
+
+
+class TensorStdout(object):
+    def __init__(self, handle):
+        self.stdin = handle
+
+    def __del__(self):
+        self.stdin.close()
+
+
+def OutputAlnTensor(args):
+    refSeq = None
+    ref_fp = open(args.ref_fn, 'r')
+    for name, refSeq, _ in readfq(ref_fp):
+        if name != args.ctgName:
+            continue
+        break
+
+    if refSeq == None:
+        print >> sys.stderr, "Cannot find reference sequence %s" % (args.ctgName)
+        sys.exit(1)
+
+    beginToEnd = {}
+    canPos = 0
+    canGen = GetCandidate(args, beginToEnd)
+
+    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+        if args.ctgStart and args.ctgEnd\
+        else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     centerToAln = {}
 
-    tensor_fpo = open(tensor_fn, "wb")
-    tensor_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=tensor_fpo, stderr=sys.stderr, bufsize=8388608)
+    if args.tensor_fn != "PIPE":
+        tensor_fpo = open(args.tensor_fn, "wb")
+        tensor_fp = subprocess.Popen(shlex.split("gzip -c"), stdin=subprocess.PIPE, stdout=tensor_fpo, stderr=sys.stderr, bufsize=8388608)
+    else:
+        tensor_fp = TensorStdout(sys.stdout)
 
     for l in p.stdout:
         l = l.split()
@@ -112,6 +125,9 @@ def OutputAlnTensor(args):
 
         endToCenter = {}
         activeSet = set()
+
+        while canPos != -1 and canPos < (POS + len(SEQ) + 100000):
+            canPos = next(canGen)
 
         for m in re.finditer(cigarRe, CIGAR):
             advance = int(m.group(1))
@@ -163,21 +179,22 @@ def OutputAlnTensor(args):
 
         for center in centerToAln.keys():
             if center + (param.flankingBaseNum+1) < POS:
-                l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
+                l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
                 tensor_fp.stdin.write(l)
                 tensor_fp.stdin.write("\n")
                 del centerToAln[center]
 
     for center in centerToAln.keys():
-        l =  GenerateTensor(ctgName, centerToAln[center], center, refSeq)
+        l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
         tensor_fp.stdin.write(l)
         tensor_fp.stdin.write("\n")
 
     p.stdout.close()
     p.wait()
-    tensor_fp.stdin.close()
-    tensor_fp.wait()
-    tensor_fpo.close()
+    if args.tensor_fn != "PIPE":
+        tensor_fp.stdin.close()
+        tensor_fp.wait()
+        tensor_fpo.close()
 
 
 if __name__ == "__main__":
@@ -191,11 +208,11 @@ if __name__ == "__main__":
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
 
-    parser.add_argument('--can_fn', type=str, default="pileup.out",
-            help="Variant candidate list generated by ExtractVariantCandidates.py or true variant list generated by GetTruth.py, default: %(default)s")
+    parser.add_argument('--can_fn', type=str, default="PIPE",
+            help="Variant candidate list generated by ExtractVariantCandidates.py or true variant list generated by GetTruth.py, use PIPE for standard input, default: %(default)s")
 
-    parser.add_argument('--tensor_fn', type=str, default="tensor.out",
-            help="Tensor output, default: %(default)s")
+    parser.add_argument('--tensor_fn', type=str, default="PIPE",
+            help="Tensor output, use PIPE for standard output, default: %(default)s")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, default: %(default)s")

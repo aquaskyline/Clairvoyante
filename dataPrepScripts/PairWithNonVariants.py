@@ -98,7 +98,8 @@ def Pair(args):
     f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.tensor_var_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
     for row in f.stdout:
         row = row.strip()
-        print >> output_fh, row
+        output_fh.stdin.write(row)
+        output_fh.stdin.write("\n")
         o1 += 1
     f.stdout.close()
     f.wait()
@@ -117,12 +118,13 @@ def Pair(args):
         if key in d:
             continue
         if random.random() < r:
-            print >> output_fh, rawRow
+            output_fh.stdin.write(rawRow)
+            output_fh.stdin.write("\n")
             o2 += 1
     f.stdout.close()
     f.wait()
     output_fh.stdin.close()
-    output_fn.wait()
+    output_fh.wait()
     output_fpo.close()
     logging.info("%.2f/%.2f Truth Variants/Non-variants outputed" % (o1, o2))
 

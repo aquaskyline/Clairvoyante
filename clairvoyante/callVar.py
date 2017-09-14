@@ -21,25 +21,20 @@ inferIndelLengthMinimumAF = 0.125
 def Run(args):
     # create a Clairvoyante
     logging.info("Loading model ...")
-    if args.v1 == True:
-        import utils_v1 as utils
-        if args.slim == True:
-            import clairvoyante_v1_slim as cv
-        else:
-            import clairvoyante_v1 as cv
-    elif args.v2 == True:
+    if args.v2 == True:
         import utils_v2 as utils
+        utils.SetupEnv()
         if args.slim == True:
             import clairvoyante_v2_slim as cv
         else:
             import clairvoyante_v2 as cv
     elif args.v3 == True:
         import utils_v2 as utils # v3 network is using v2 utils
+        utils.SetupEnv()
         if args.slim == True:
             import clairvoyante_v3_slim as cv
         else:
             import clairvoyante_v3 as cv
-    utils.SetupEnv()
     m = cv.Clairvoyante()
     m.init()
 
@@ -48,25 +43,7 @@ def Run(args):
 
 
 def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
-    if args.v1 == True:
-        if num != len(base):
-          sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
-        #          --------------  -------------------
-        #          Base chng       Var type
-        #          A   C   G   T   HET HOM INS DEL REF
-        #          0   1   2   3   4   5   6   7   8
-        for j in range(len(base)):
-            if args.show_ref == False and np.argmax(t[j]) == 4: continue
-            sortBase = base[j].argsort()[::-1]
-            base1 = num2base[sortBase[0]]
-            base2 = num2base[sortBase[1]]
-            if(base1 > base2): base1, base2 = base2, base1
-            varTypeName = v1Type2Name[np.argmax(t[j])]
-            if np.argmax(t[j]) == 0: outBase = "%s%s" % (base1, base2)
-            else: outBase = "%s%s" % (base1, base1)
-            print >> call_fh, " ".join(posBatch[j].split(":")), outBase, varTypeName
-
-    elif args.v2 == True or args.v3 == True:
+    if args.v2 == True or args.v3 == True:
         if num != len(base):
           sys.exit("Inconsistent shape between input tensor and output predictions %d/%d" % (num, len(base)))
         #          --------------  ------  ------------    ------------------
@@ -74,7 +51,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
         #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
         #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
         for j in range(len(base)):
-            if args.show_ref == False and np.argmax(t[j]) == 0: continue
+            if args.showRef == False and np.argmax(t[j]) == 0: continue
             # Get variant type, 0:REF, 1:SNP, 2:INS, 3:DEL
             varType = np.argmax(t[j])
             # Get zygosity, 0:HET, 1:HOM
@@ -85,7 +62,9 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             chromosome, coordination, refSeq = posBatch[j].split(":")
             # Get genotype quality
             sortVarType = np.sort(t[j])[::-1]
-            qual = int(-4.343 * log((sortVarType[1] + 1e-10) / (sortVarType[0] + 1e-10)))
+            sortZygosity = np.sort(z[j])[::-1]
+            sortLength = np.sort(l[j])[::-1]
+            qual = int(-4.343 * log((sortVarType[1]*sortZygosity[1]*sortLength[1]  + 1e-10) / (sortVarType[0]*sortZygosity[0]*sortLength[0]  + 1e-10)))
             if qual > 99: qual = 99
             # Get possible alternative bases
             sortBase = base[j].argsort()[::-1]
@@ -175,7 +154,7 @@ def PrintVCFHeader(args, call_fh):
     print >> call_fh, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     print >> call_fh, '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">'
     print >> call_fh, '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">'
-    print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sample_name)
+    print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sampleName)
 
 def Test(args, m, utils):
     call_fh = open(args.call_fn, "w")
@@ -221,8 +200,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description="Call variants using a trained Clairvoyante model and tensors of candididate variants" )
 
-    parser.add_argument('--tensor_fn', type=str, default = None,
-            help="Tensor input")
+    parser.add_argument('--tensor_fn', type=str, default = "PIPE",
+            help="Tensor input, use PIPE for standard input")
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing or continue training")
@@ -230,10 +209,10 @@ if __name__ == "__main__":
     parser.add_argument('--call_fn', type=str, default = None,
             help="Output variant predictions")
 
-    parser.add_argument('--sample_name', type=str, default = "SAMPLE",
+    parser.add_argument('--sampleName', type=str, default = "SAMPLE",
             help="Define the sample name to be shown in the VCF file")
 
-    parser.add_argument('--show_ref', type=bool, default = False,
+    parser.add_argument('--showRef', type=bool, default = False,
             help="Show reference calls, optional")
 
     parser.add_argument('--v3', type=bool, default = True,
@@ -241,9 +220,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--v2', type=bool, default = False,
             help="Use Clairvoyante version 2")
-
-    parser.add_argument('--v1', type=bool, default = False,
-            help="Use Clairvoyante version 1")
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")

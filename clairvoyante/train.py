@@ -13,13 +13,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
-    if args.v1 == True:
-        import utils_v1 as utils
-        if args.slim == True:
-            import clairvoyante_v1_slim as cv
-        else:
-            import clairvoyante_v1 as cv
-    elif args.v2 == True:
+    if args.v2 == True:
         import utils_v2 as utils
         if args.slim == True:
             import clairvoyante_v2_slim as cv
@@ -175,22 +169,7 @@ def TrainAll(args, m, utils):
     logging.info("Testing on the training and validation dataset ...")
     predictStart = time.time()
     predictBatchSize = param.predictBatchSize
-    if args.v1 == True:
-        datasetPtr = 0
-        XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        bases = []; ts = []
-        base, t = m.predict(XBatch)
-        bases.append(base); ts.append(t)
-        datasetPtr += predictBatchSize
-        while datasetPtr < total:
-            XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-            base, t = m.predict(XBatch)
-            bases.append(base); ts.append(t)
-            datasetPtr += predictBatchSize
-            if endFlag != 0:
-                break
-        bases = np.concatenate(bases[:]); ts = np.concatenate(ts[:])
-    elif args.v2 == True or args.v3 == True:
+    if args.v2 == True or args.v3 == True:
         datasetPtr = 0
         XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
         bases = []; zs = []; ts = []; ls = []
@@ -209,23 +188,7 @@ def TrainAll(args, m, utils):
 
     # Evaluate the trained model
     YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-    if args.v1 == True:
-        logging.info("Version 1 model, evaluation on base change:")
-        allBaseCount = top1Count = top2Count = 0
-        for predictV, annotateV in zip(bases, YArray[:,0:4]):
-            allBaseCount += 1
-            sortPredictV = predictV.argsort()[::-1]
-            if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
-            elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
-        logging.info("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
-                    (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100))
-        logging.info("Version 1 model, evaluation on variant type:")
-        ed = np.zeros( (5,5), dtype=np.int )
-        for predictV, annotateV in zip(ts, YArray[:,4:9]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-        for i in range(5):
-            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
-    elif args.v2 == True or args.v3 == True:
+    if args.v2 == True or args.v3 == True:
         logging.info("Version 2 model, evaluation on base change:")
         allBaseCount = top1Count = top2Count = 0
         for predictV, annotateV in zip(bases, YArray[:,0:4]):
@@ -292,9 +255,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--v2', type=bool, default = False,
             help="Use Clairvoyante version 2")
-
-    parser.add_argument('--v1', type=bool, default = False,
-            help="Use Clairvoyante version 1")
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")

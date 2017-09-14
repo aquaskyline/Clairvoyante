@@ -4,8 +4,8 @@ import argparse
 import param
 import logging
 import numpy as np
-import utils_v1 as utils
-import clairvoyante_v1 as cv
+import utils_v2 as utils
+import clairvoyante_v2 as cv
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
@@ -64,6 +64,7 @@ def TrainAll(args, m):
             validationLosts.append( (validationLost, i) )
             c += 1
             flag = 0
+            flipFlop = 0
             if c >= 6:
               if validationLosts[-6][0] - validationLosts[-5][0] <= 0: flipFlop += 1
               if validationLosts[-5][0] - validationLosts[-4][0] <= 0: flipFlop += 1
@@ -93,30 +94,49 @@ def TrainAll(args, m):
     predictBatchSize = param.predictBatchSize
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-    bases = []; ts = []
-    base, t = m.predict(XBatch)
-    bases.append(base); ts.append(t)
+    bases = []; zs = []; ts = []; ls = []
+    base, z, t, l = m.predict(XBatch)
+    bases.append(base); zs.append(z); ts.append(t); ls.append(l)
     datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        base, t = m.predict(XBatch)
-        bases.append(base); ts.append(t)
+        base, z, t, l = m.predict(XBatch)
+        bases.append(base); zs.append(z); ts.append(t); ls.append(l)
         datasetPtr += predictBatchSize
         if endFlag != 0:
             break
-    bases = np.concatenate(bases[:])
-    ts = np.concatenate(ts[:])
-    logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
+    bases = np.concatenate(bases[:]); zs = np.concatenate(zs[:]); ts = np.concatenate(ts[:]); ls = np.concatenate(ls[:])
+    print >> sys.stderr, "Prediciton time elapsed: %.2f s" % (time.time() - predictStart)
 
-    if True:
-        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-        logging.info("Model evaluation on the training dataset:")
-        ed = np.zeros( (5,5), dtype=np.int )
-        for predictV, annotateV in zip(ts, YArray[:,4:]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
-
-        for i in range(5):
-            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
+    # Evaluate the trained model
+    YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+    print >> sys.stderr, "Version 2 model, evaluation on base change:"
+    allBaseCount = top1Count = top2Count = 0
+    for predictV, annotateV in zip(bases, YArray[:,0:4]):
+        allBaseCount += 1
+        sortPredictV = predictV.argsort()[::-1]
+        if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
+        elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
+    print >> sys.stderr, "all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100)
+    print >> sys.stderr, "Version 2 model, evaluation on Zygosity:"
+    ed = np.zeros( (2,2), dtype=np.int )
+    for predictV, annotateV in zip(zs, YArray[:,4:6]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(2):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(2)])
+    print >> sys.stderr, "Version 2 model, evaluation on variant type:"
+    ed = np.zeros( (4,4), dtype=np.int )
+    for predictV, annotateV in zip(ts, YArray[:,6:10]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(4):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(4)])
+    print >> sys.stderr, "Version 2 model, evaluation on indel length:"
+    ed = np.zeros( (6,6), dtype=np.int )
+    for predictV, annotateV in zip(ls, YArray[:,10:16]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(6):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(6)])
 
 def Test22(args, m):
     logging.info("Loading the chr22 dataset ...")
@@ -130,30 +150,50 @@ def Test22(args, m):
     predictBatchSize = param.predictBatchSize
     datasetPtr = 0
     XBatch, _, _ = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-    bases = []; ts = []
-    base, t = m.predict(XBatch)
-    bases.append(base); ts.append(t)
+    bases = []; zs = []; ts = []; ls = []
+    base, z, t, l = m.predict(XBatch)
+    bases.append(base); zs.append(z); ts.append(t); ls.append(l)
     datasetPtr += predictBatchSize
     while datasetPtr < total:
         XBatch, _, endFlag = utils.DecompressArray(XArrayCompressed, datasetPtr, predictBatchSize, total)
-        base, t = m.predict(XBatch)
-        bases.append(base); ts.append(t)
+        base, z, t, l = m.predict(XBatch)
+        bases.append(base); zs.append(z); ts.append(t); ls.append(l)
         datasetPtr += predictBatchSize
         if endFlag != 0:
             break
-    bases = np.concatenate(bases[:])
-    ts = np.concatenate(ts[:])
-    logging.info("Prediciton time elapsed: %.2f s" % (time.time() - predictStart))
+    bases = np.concatenate(bases[:]); zs = np.concatenate(zs[:]); ts = np.concatenate(ts[:]); ls = np.concatenate(ls[:])
+    print >> sys.stderr, "Prediciton time elapsed: %.2f s" % (time.time() - predictStart)
 
-    if True:
-        YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-        logging.info("Model evaluation on the chr22 dataset:")
-        ed = np.zeros( (5,5), dtype=np.int )
-        for predictV, annotateV in zip(ts, YArray[:,4:]):
-            ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    # Evaluate the trained model
+    YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
+    print >> sys.stderr, "Version 2 model, evaluation on base change:"
+    allBaseCount = top1Count = top2Count = 0
+    for predictV, annotateV in zip(bases, YArray[:,0:4]):
+        allBaseCount += 1
+        sortPredictV = predictV.argsort()[::-1]
+        if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
+        elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
+    print >> sys.stderr, "all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100)
+    print >> sys.stderr, "Version 2 model, evaluation on Zygosity:"
+    ed = np.zeros( (2,2), dtype=np.int )
+    for predictV, annotateV in zip(zs, YArray[:,4:6]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(2):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(2)])
+    print >> sys.stderr, "Version 2 model, evaluation on variant type:"
+    ed = np.zeros( (4,4), dtype=np.int )
+    for predictV, annotateV in zip(ts, YArray[:,6:10]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(4):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(4)])
+    print >> sys.stderr, "Version 2 model, evaluation on indel length:"
+    ed = np.zeros( (6,6), dtype=np.int )
+    for predictV, annotateV in zip(ls, YArray[:,10:16]):
+        ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
+    for i in range(6):
+        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(6)])
 
-        for i in range(5):
-            logging.info("\t".join([str(ed[i][j]) for j in range(5)]))
 
 if __name__ == "__main__":
 
@@ -167,10 +207,6 @@ if __name__ == "__main__":
             help="Prefix for tensorboard log outputs, optional")
 
     args = parser.parse_args()
-
-    if len(sys.argv[1:]) == 0:
-        parser.print_help()
-        sys.exit(1)
 
     Run(args)
 

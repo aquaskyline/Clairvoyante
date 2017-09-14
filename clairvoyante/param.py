@@ -19,3 +19,4 @@ parameterOutputPlaceHolder = 6
 maxLearningRateSwitch = 3
 bloscBlockSize = 500
 trainingDatasetPercentage = 0.9
+NUM_THREADS = 16

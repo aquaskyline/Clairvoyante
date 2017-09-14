@@ -13,13 +13,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 def Run(args):
     # create a Clairvoyante
     logging.info("Initializing model ...")
-    if args.v1 == True:
-        import utils_v1 as utils
-        if args.slim == True:
-            import clairvoyante_v1_slim as cv
-        else:
-            import clairvoyante_v1 as cv
-    elif args.v2 == True:
+    if args.v2 == True:
         import utils_v2 as utils
         if args.slim == True:
             import clairvoyante_v2_slim as cv
@@ -156,9 +150,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--v2', type=bool, default = False,
             help="Use Clairvoyante version 2")
-
-    parser.add_argument('--v1', type=bool, default = False,
-            help="Use Clairvoyante version 1")
 
     parser.add_argument('--slim', type=bool, default = False,
             help="Train using the slim version of Clairvoyante, optional")

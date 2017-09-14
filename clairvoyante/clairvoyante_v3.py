@@ -26,7 +26,7 @@ class Clairvoyante(object):
         self.predictBaseRTVal = None; self.predictZygosityRTVal = None; self.predictVarTypeRTVal = None; self.predictIndelLengthRTVal = None
         self.g = tf.Graph()
         self._buildGraph()
-        self.session = tf.Session(graph = self.g)
+        self.session = tf.Session(graph = self.g, config=tf.ConfigProto(intra_op_parallelism_threads=param.NUM_THREADS))
 
     def _buildGraph(self):
         with self.g.as_default():
