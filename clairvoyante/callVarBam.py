@@ -90,11 +90,11 @@ def Run(args):
     signal.signal(signal.SIGALRM, CheckRtCode)
     signal.alarm(2)
 
-    c.EVCInstance.stdout.close()
-    c.EVCInstance.wait()
+    c.CVInstance.wait()
     c.CTInstance.stdout.close()
     c.CTInstance.wait()
-    c.CTInstance.wait()
+    c.EVCInstance.stdout.close()
+    c.EVCInstance.wait()
 
 
 if __name__ == "__main__":
