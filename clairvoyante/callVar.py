@@ -35,6 +35,8 @@ def Run(args):
             import clairvoyante_v3_slim as cv
         else:
             import clairvoyante_v3 as cv
+    if args.tensor_fn == "PIPE":
+        param.NUM_THREADS = 4
     m = cv.Clairvoyante()
     m.init()
 
