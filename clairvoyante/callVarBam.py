@@ -64,10 +64,6 @@ def Run(args):
     threshold = args.threshold
     minCoverage = args.minCoverage
     sampleName = args.sampleName
-    if args.showRef == True:
-        showRef = "True"
-    else:
-        showRef = "False"
     ctgName = args.ctgName
     if args.ctgStart and args.ctgEnd and int(args.ctgStart) <= int(args.ctgEnd):
         ctgRange = "--ctgStart %s --ctgEnd %s" % (args.ctgStart, args.ctgEnd)
@@ -84,8 +80,8 @@ def Run(args):
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, samtoolsBin) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
-            shlex.split("python %s --chkpnt_fn %s --call_fn %s --sampleName %s --showRef %s" %\
-                        (CVBin, chkpnt_fn, call_fn, sampleName, showRef) ),\
+            shlex.split("python %s --chkpnt_fn %s --call_fn %s --sampleName %s" %\
+                        (CVBin, chkpnt_fn, call_fn, sampleName) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
         print e
@@ -141,9 +137,6 @@ if __name__ == "__main__":
 
     parser.add_argument('--pypy', type=str, default="pypy",
             help="Path to the 'pypy', default: %(default)s")
-
-    parser.add_argument('--showRef', type=bool, default = False,
-            help="Show reference calls, optional")
 
     parser.add_argument('--v3', type=bool, default = True,
             help="Use Clairvoyante version 3")
