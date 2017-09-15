@@ -7,6 +7,14 @@ Email: rluo5@jhu.edu
 With the increasing throughput and reliability of sequencing technologies in the recent years, it's getting common that medical doctors rely on sequencing to make better diagnostics to cancers and rare diseases. Among the interpretable results that sequencing can provide, genetics variants that have been reported in renowed databases such as Clinvar and HGMD, with evidence showing that they associate with certain symptomes and therapies, are considered as actionable genetic variant candidiates. However, eventhough the state-of-the-art variant callers achieve better precision and sensitivity, it is still not uncommon for the variant callers to produce false positive variants with somehow a pretty high probability, which makes them unable to be tell apart from the true negatives. The situation gets even worse when the callers are set to favor sensitivity over percision, which is often the case in clinical practices. The false positives variants, if not being sanitized, will lead to spurious clinical diagnosis. Instead of relying only on what a variant caller tells, clinical doctors usually verify the correctness of actionable genetic variants by eyes, with the help of `IGV` or `SAMtools tview`. Clairvoyante was designed to expedite the process and save the doctors from eye checking the variant, using a deep neural network based eye, trained with millions of samples on how a true variant "looks like" in different settings.  
 ***
 
+## Gallery
+### Network topology
+![Network Topology](https://raw.githubusercontent.com/aquaskyline/Clairvoyante/rbDev/gallery/Network.png)
+### Tensor examples
+![Tensor examples](https://raw.githubusercontent.com/aquaskyline/Clairvoyante/rbDev/gallery/Tensors.png)
+### Activations of the conv1 hidden layer to a non-variant tensor
+![conv1](https://raw.githubusercontent.com/aquaskyline/Clairvoyante/rbDev/gallery/Conv1.png)
+***
 ## Prerequisition
 ### Basics
 Make sure you have Tensorflow ≥ 1.0.0 installed, the following commands install the lastest CPU version of Tensorflow:  
