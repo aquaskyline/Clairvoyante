@@ -153,15 +153,17 @@ The testing dataset 'testingData.tar' includes:
 
 ## About the Trained Models
 The trained models are in the `trainedModels/` folder.
-Folder | Tech | Aligner | Ref | Sample
---- |:---:|:---:|:---:|:---:
-`fullv3-bgiseq-bwa-hg001-hg38` | BGISEQ-500 | BWA 0.7.15-r1140 | hg38 | NA12878
-`fullv3-illumina-novoalign-hg001-hg38` | Illumina HiSeq2500^1^ | Nonoalign 3.02.07 | hg38 | NA12878 
-`fullv3-illumina-novoalign-hg002-hg38` | Illumina HiSeq2500 | Nonoalign 3.02.07 | hg38 | NA24385
-`fullv3-ont-bwa-hg001-hg38` | Oxford Nanopore Minion R9.4 | BWA 0.7.15-r1140 | hg38 | NA12878
-`fullv3-ont-ngmlr-hg001-hg19` | Oxford Nanopore Minion R9.4 | NGMLR 0.2.6 | hg19 | NA12878
-`fullv3-pacbio-bwa-hg001-hg38` | PacBio P5-C3^3^ | BWA 0.7.15-r1140 | hg38 | NA12878
-`fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P5-C3^3^ | NGMLR 0.2.6 | hg19 | NA12878
+
+
+Folder | Tech | Aligner | Ref | Sample |
+--- |:---:|:---:|:---:|:---:|
+`fullv3-bgiseq-bwa-hg001-hg38` | BGISEQ-500 | BWA 0.7.15-r1140 | hg38 | NA12878 |
+`fullv3-illumina-novoalign-hg001-hg38` | Illumina HiSeq2500^1^ | Nonoalign 3.02.07 | hg38 | NA12878 |
+`fullv3-illumina-novoalign-hg002-hg38` | Illumina HiSeq2500 | Nonoalign 3.02.07 | hg38 | NA24385 |
+`fullv3-ont-bwa-hg001-hg38` | Oxford Nanopore Minion R9.4 | BWA 0.7.15-r1140 | hg38 | NA12878 |
+`fullv3-ont-ngmlr-hg001-hg19` | Oxford Nanopore Minion R9.4 | NGMLR 0.2.6 | hg19 | NA12878 |
+`fullv3-pacbio-bwa-hg001-hg38` | PacBio P5-C3^3^ | BWA 0.7.15-r1140 | hg38 | NA12878 |
+`fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P5-C3^3^ | NGMLR 0.2.6 | hg19 | NA12878 |
 
 
 ^1^ Also using Illumina TruSeq (LT) DNA PCR-Free Sample Prep Kits, *Zook et al. Extensive sequencing of seven human genomes to characterize benchmark reference materials. 2016*
