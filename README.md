@@ -151,6 +151,27 @@ The testing dataset 'testingData.tar' includes:
 2) the truth variants v3.3.2 from [GIAB](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38).  
 ***
 
+## About the Trained Models
+The trained models are in the `trainedModels/` folder.
+Folder | Tech | Aligner | Ref | Sample
+--- |:---:|:---:|:---:|:---:
+`fullv3-bgiseq-bwa-hg001-hg38` | BGISEQ-500 | BWA 0.7.15-r1140 | hg38 | NA12878
+`fullv3-illumina-novoalign-hg001-hg38` | Illumina HiSeq2500^1^ | Nonoalign 3.02.07 | hg38 | NA12878 
+`fullv3-illumina-novoalign-hg002-hg38` | Illumina HiSeq2500 | Nonoalign 3.02.07 | hg38 | NA24385
+`fullv3-ont-bwa-hg001-hg38` | Oxford Nanopore Minion R9.4 | BWA 0.7.15-r1140 | hg38 | NA12878
+`fullv3-ont-ngmlr-hg001-hg19` | Oxford Nanopore Minion R9.4 | NGMLR 0.2.6 | hg19 | NA12878
+`fullv3-pacbio-bwa-hg001-hg38` | PacBio P5-C3^3^ | BWA 0.7.15-r1140 | hg38 | NA12878
+`fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P5-C3^3^ | NGMLR 0.2.6 | hg19 | NA12878
+
+
+^1^ Also using Illumina TruSeq (LT) DNA PCR-Free Sample Prep Kits, *Zook et al. Extensive sequencing of seven human genomes to characterize benchmark reference materials. 2016*
+^2^ [Nanopore WGS Consortium](https://github.com/nanopore-wgs-consortium/NA12878)
+^3^ *Pendelton et al. Assembly and diploid architecture of an individual human genome via single-molecule technologies. 2015*
+\* There are two models in each folder. One with a lower number of training epochs (the 6 suffix digits) was trained by `train.py` with default settings. Another with exactly 499 training epochs was trained by `trainWithoutValidationNonstop.py` on top of the first model with learning rate at 1e^-4^ and l2 regularization lambda at 1e^-5^. 
+\*\* The following models were trained using an older Clairvoyante model and are for research use only.
+`fullv2-bgiseq-bwa-hg001-hg38`, `fullv2-illumina-novoalign-hg001-hg38`, `fullv2-ont-bwa-hg001-hg38`, `fullv2-pacbio-bwa-hg001-hg38`, `slimv2-bgiseq-bwa-hg001-hg38`, `slimv2-illumina-novoalign-hg001-hg38`, `slimv2-ont-bwa-hg001-hg38`, `slimv2-pacbio-bwa-hg001-hg38`
+***
+
 ## Miscellaneous
 ### Run on MARCC
 ```
