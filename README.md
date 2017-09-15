@@ -169,8 +169,8 @@ Folder | Tech | Aligner | Ref | Sample |
 <sup>2</sup> Also using Illumina TruSeq (LT) DNA PCR-Free Sample Prep Kits, *Zook et al. Extensive sequencing of seven human genomes to characterize benchmark reference materials. 2016*  
 <sup>3</sup> [Nanopore WGS Consortium](https://github.com/nanopore-wgs-consortium/NA12878)  
 <sup>4</sup> *Pendelton et al. Assembly and diploid architecture of an individual human genome via single-molecule technologies. 2015*  
-\* There are two models in each folder. One with a lower number of training epochs (the 6 suffix digits) was trained by `train.py` with default settings. Another with exactly 499 training epochs was trained by `trainWithoutValidationNonstop.py` on top of the first model with learning rate at 1e^-4^ and l2 regularization lambda at 1e^-5^.  
-\*\* The following models were trained using an older Clairvoyante model and are for research use only.
+<sup>\*</sup> There are two models in each folder. One with a lower number of training epochs (the 6 suffix digits) was trained by `train.py` with default settings. Another with exactly 499 training epochs was trained by `trainWithoutValidationNonstop.py` on top of the first model with learning rate at 1e<sup>-4</sup> and l2 regularization lambda at 1e<sup>-5</sup>.  
+<sup>\*\*</sup> The following models were trained using an older Clairvoyante model and are for research use only.
 `fullv2-bgiseq-bwa-hg001-hg38`, `fullv2-illumina-novoalign-hg001-hg38`, `fullv2-ont-bwa-hg001-hg38`, `fullv2-pacbio-bwa-hg001-hg38`, `slimv2-bgiseq-bwa-hg001-hg38`, `slimv2-illumina-novoalign-hg001-hg38`, `slimv2-ont-bwa-hg001-hg38`, `slimv2-pacbio-bwa-hg001-hg38`
 
 ***
