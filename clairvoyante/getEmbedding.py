@@ -163,7 +163,7 @@ def get_arguements():
     parser.add_argument('--olog_dir', type=str, default = None,
             help="Directory for tensorboard log outputs")
 
-    parser.add_argument('--slim', type=bool, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
             help="Train using the slim version of Clairvoyante, default: False")
 
     parser.add_argument('--count', type=int, default = 10000,

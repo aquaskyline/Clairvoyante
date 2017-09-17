@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import param
 import shlex
 import subprocess
 import signal
@@ -65,6 +66,10 @@ def Run(args):
     minCoverage = args.minCoverage
     sampleName = args.sampleName
     ctgName = args.ctgName
+    if args.considerleftedge:
+        considerleftedge = "--considerleftedge"
+    else:
+        considerleftedge = ""
     if args.ctgStart and args.ctgEnd and int(args.ctgStart) <= int(args.ctgEnd):
         ctgRange = "--ctgStart %s --ctgEnd %s" % (args.ctgStart, args.ctgEnd)
     else:
@@ -76,8 +81,8 @@ def Run(args):
                         (pypyBin, EVCBin, bam_fn, ref_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
                         stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CTInstance = subprocess.Popen(\
-            shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s --samtools %s" %\
-                        (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, samtoolsBin) ),\
+            shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s %s --samtools %s" %\
+                        (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
             shlex.split("python %s --chkpnt_fn %s --call_fn %s --sampleName %s" %\
@@ -132,19 +137,22 @@ if __name__ == "__main__":
     parser.add_argument('--ctgEnd', type=int, default=None,
             help="The inclusive ending position of the sequence to be processed")
 
+    parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=False, default=False,
+            help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
+
     parser.add_argument('--samtools', type=str, default="samtools",
             help="Path to the 'samtools', default: %(default)s")
 
     parser.add_argument('--pypy', type=str, default="pypy",
             help="Path to the 'pypy', default: %(default)s")
 
-    parser.add_argument('--v3', type=bool, default = True,
+    parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
 
-    parser.add_argument('--v2', type=bool, default = False,
+    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=False, default = False,
             help="Use Clairvoyante version 2")
 
-    parser.add_argument('--slim', type=bool, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
             help="Train using the slim version of Clairvoyante, optional")
 
     args = parser.parse_args()

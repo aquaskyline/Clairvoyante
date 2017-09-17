@@ -44,10 +44,10 @@ if __name__ == "__main__":
     parser.add_argument('--bin_fn', type=str, default = None,
             help="Output a binary tensor file")
 
-    parser.add_argument('--v3', type=bool, default = True,
+    parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
 
-    parser.add_argument('--v2', type=bool, default = False,
+    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=False, default = False,
             help="Use Clairvoyante version 2")
 
     args = parser.parse_args()

@@ -250,13 +250,13 @@ if __name__ == "__main__":
     parser.add_argument('--olog_dir', type=str, default = None,
             help="Directory for tensorboard log outputs, optional")
 
-    parser.add_argument('--v3', type=bool, default = True,
+    parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
 
-    parser.add_argument('--v2', type=bool, default = False,
+    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=False, default = False,
             help="Use Clairvoyante version 2")
 
-    parser.add_argument('--slim', type=bool, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
             help="Train using the slim version of Clairvoyante, optional")
 
     args = parser.parse_args()

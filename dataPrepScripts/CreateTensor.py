@@ -226,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--samtools', type=str, default="samtools",
             help="Path to the 'samtools', default: %(default)s")
 
-    parser.add_argument('--considerleftedge', type=bool, default=False,
+    parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=False, default=False,
             help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
 
     args = parser.parse_args()
