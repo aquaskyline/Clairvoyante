@@ -99,8 +99,11 @@ Please visit: `jupyter_nb/demo.ipynb`
 ***
 
 ## Visualization
-### Visualizing Input Tensors, Activiation in Hidden Layers and Comparing Predicted Results
+### Interactively visualizing Input Tensors, Activiation in Hidden Layers and Comparing Predicted Results (Suggested)
 `jupyter_nb/visualization.ipynb`
+
+### Output tensors and layer activations to PNG figures
+`getTensorAndLayerPNG.py`. You will need to input a model, a file with one or more tensors created by `CreateTensor.py` and optionally a file with the truth variants created by `GetTruth.py`. The script will create 7 PNG figures for each line of tensor, including 1) input tensors; 2) conv1 layer activations; 3) conv2 layer activations; 4) conv3 layer activations; 5) fc4 layer activations; 6) fc5 layer activations and 7) output predictions and the truth.
 
 ### Tensorboard
 The `--olog_dir` option provided in the training scripts outputs a folder of log files readable by the Tensorboard. It can be used to visualize the dynamics of parameters during training at each epoch.
@@ -136,6 +139,7 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 `trainNonstop.py` |  Helper script. Train a model continuously using the same learning rate and l2 regularization lambda.
 `trainWithoutValidationNonstop.py` | Helper script. Train a model continuously using the same learning rate and l2 regularization lambda. Take all the input tensors as training data and do not calculate loss in the validation data.
 `calTrainDevDiff.py` | Helper script. Calculate the training loss and validation loss on a trained model.
+`getTensorAndLayerPNG.py` | Create high resolution PNG figures to visualize input tensor, layer activations and output.
 `getEmbedding.py` | Prepare a folder readable by Tensorboard for visualzing predicted results.
 `clairvoyante_v3.py` | Clairvoyante netowork topology v3.
 `clairvoyante_v3_slim.py` | Clairvoyante netowork topology v3 slim. With 10 times less parameters than the full network, it trains about 1.5 times faster than the full network. It performs only about 1% less in precision and recall rates for Illumina data.
