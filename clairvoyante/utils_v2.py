@@ -58,60 +58,63 @@ def GetTensor( tensor_fn, num ):
 
 def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     tree = {}
-    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
-    for row in f.stdout:
-        row = row.split()
-        name = row[0]
-        if name not in tree:
-            tree[name] = intervaltree.IntervalTree()
-        begin = int(row[1])
-        end = int(row[2])
-        tree[name].addi(begin, end)
-    f.stdout.close()
-    f.wait()
+    if bed_fn != None:
+        f = subprocess.Popen(shlex.split("gzip -fdc %s" % (bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        for row in f.stdout:
+            row = row.split()
+            name = row[0]
+            if name not in tree:
+                tree[name] = intervaltree.IntervalTree()
+            begin = int(row[1])
+            end = int(row[2])
+            tree[name].addi(begin, end)
+        f.stdout.close()
+        f.wait()
 
     Y = {}
-    f = subprocess.Popen(shlex.split("gzip -fdc %s" % (var_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
-    for row in f.stdout:
-        row = row.split()
-        ctgName = row[0]
-        pos = int(row[1])
-        if len(tree[ctgName].search(pos)) == 0:
-            continue
-        key = ctgName + ":" + str(pos)
+    if var_fn != None:
+        f = subprocess.Popen(shlex.split("gzip -fdc %s" % (var_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        for row in f.stdout:
+            row = row.split()
+            ctgName = row[0]
+            pos = int(row[1])
+            if bed_fn != None:
+                if len(tree[ctgName].search(pos)) == 0:
+                    continue
+            key = ctgName + ":" + str(pos)
 
-        baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        #          --------------  ------  ------------    ------------------
-        #          Base chng       Zygo.   Var type        Var length
-        #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
-        #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+            baseVec = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+            #          --------------  ------  ------------    ------------------
+            #          Base chng       Zygo.   Var type        Var length
+            #          A   C   G   T   HET HOM REF SNP INS DEL 0   1   2   3   4   >=4
+            #          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
 
-        if row[4] == "0" and row[5] == "1":
-            if len(row[2]) == 1 and len(row[3]) == 1:
-                baseVec[base2num[row[2][0]]] = 0.5
-                baseVec[base2num[row[3][0]]] = 0.5
-            elif len(row[2]) > 1 or len(row[3]) > 1:
-                baseVec[base2num[row[2][0]]] = 0.5
-            baseVec[4] = 1.
+            if row[4] == "0" and row[5] == "1":
+                if len(row[2]) == 1 and len(row[3]) == 1:
+                    baseVec[base2num[row[2][0]]] = 0.5
+                    baseVec[base2num[row[3][0]]] = 0.5
+                elif len(row[2]) > 1 or len(row[3]) > 1:
+                    baseVec[base2num[row[2][0]]] = 0.5
+                baseVec[4] = 1.
 
-        elif row[4] == "1" and row[5] == "1":
-            if len(row[2]) == 1 and len(row[3]) == 1:
-                baseVec[base2num[row[3][0]]] = 1
-            elif len(row[2]) > 1 or len(row[3]) > 1:
-                pass
-            baseVec[5] = 1.
+            elif row[4] == "1" and row[5] == "1":
+                if len(row[2]) == 1 and len(row[3]) == 1:
+                    baseVec[base2num[row[3][0]]] = 1
+                elif len(row[2]) > 1 or len(row[3]) > 1:
+                    pass
+                baseVec[5] = 1.
 
-        if len(row[2]) > 1 and len(row[3]) == 1: baseVec[9] = 1. # deletion
-        elif len(row[3]) > 1 and len(row[2]) == 1: baseVec[8] = 1.  # insertion
-        else: baseVec[7] = 1.  # SNP
+            if len(row[2]) > 1 and len(row[3]) == 1: baseVec[9] = 1. # deletion
+            elif len(row[3]) > 1 and len(row[2]) == 1: baseVec[8] = 1.  # insertion
+            else: baseVec[7] = 1.  # SNP
 
-        varLen = abs(len(row[2])-len(row[3]))
-        if varLen > 4: baseVec[15] = 1.
-        else: baseVec[10+varLen] = 1.
+            varLen = abs(len(row[2])-len(row[3]))
+            if varLen > 4: baseVec[15] = 1.
+            else: baseVec[10+varLen] = 1.
 
-        Y[key] = baseVec
-    f.stdout.close()
-    f.wait()
+            Y[key] = baseVec
+        f.stdout.close()
+        f.wait()
 
     X = {}
     f = subprocess.Popen(shlex.split("gzip -fdc %s" % (tensor_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
@@ -119,8 +122,9 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
     mat = np.empty(((2*param.flankingBaseNum+1)*4*param.matrixNum), dtype=np.float32)
     for row in f.stdout:
         chrom, coord, seq, mat = UnpackATensorRecord(*(row.split()))
-        if chrom not in tree: continue
-        if len(tree[chrom].search(int(coord))) == 0: continue
+        if bed_fn != None:
+            if chrom not in tree: continue
+            if len(tree[chrom].search(int(coord))) == 0: continue
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: continue
         key = chrom + ":" + coord
 

@@ -32,10 +32,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description="Generate a binary format input tensor" )
 
-    parser.add_argument('--tensor_fn', type=str, default = None,
+    parser.add_argument('--tensor_fn', type=str, default = "vartensors",
             help="Tensor input")
 
-    parser.add_argument('--var_fn', type=str, default = None,
+    parser.add_argument('--var_fn', type=str, default = "truthvars",
             help="Truth variants list input")
 
     parser.add_argument('--bed_fn', type=str, default = None,

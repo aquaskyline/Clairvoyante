@@ -33,9 +33,9 @@ def bufcount(filename):
 
 
 def Pair(args):
-    logging.info("Loading BED file ...")
     tree = {}
     if args.bed_fn != None:
+        logging.info("Loading BED file ...")
         f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
         for row in f.stdout:
             row = row.strip().split()
