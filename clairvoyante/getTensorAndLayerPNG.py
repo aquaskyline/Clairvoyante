@@ -22,7 +22,7 @@ def Prepare(args):
     m.restoreParameters(args.chkpnt_fn)
 
     total, XArrayCompressed, YArrayCompressed, posArrayCompressed = \
-    utils.GetTrainingArray(args.tensor_fn, None, None)
+    utils.GetTrainingArray(args.tensor_fn, args.var_fn, None)
 
     return m, utils, total, XArrayCompressed, YArrayCompressed, posArrayCompressed
 
@@ -145,8 +145,11 @@ def ParseArgs():
     parser = argparse.ArgumentParser(
             description="Visualize tensors and hidden layers in PNG" )
 
-    parser.add_argument('--tensor_fn', type=str, default = None,
+    parser.add_argument('--tensor_fn', type=str, default = "vartensors",
             help="Tensor input")
+
+    parser.add_argument('--var_fn', type=str, default = None,
+            help="Truth variants input")
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing or continue training")
