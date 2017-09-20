@@ -45,6 +45,7 @@ def GetTensor( tensor_fn, num ):
             total += c; print >> sys.stderr, "Processed %d tensors" % total
             yield 0, c, x, pos
             c = 0
+            rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
             pos = []
 
     if tensor_fn != "PIPE":

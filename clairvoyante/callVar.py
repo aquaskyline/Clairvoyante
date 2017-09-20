@@ -6,7 +6,6 @@ import param
 import logging
 import numpy as np
 from threading import Thread
-from copy import deepcopy
 from math import log
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -168,9 +167,9 @@ def Test(args, m, utils):
     end = 0; end2 = 0; terminate = 0
     end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
     m.predictNoRT(XBatch2)
-    base = deepcopy(m.predictBaseRTVal); z = deepcopy(m.predictZygosityRTVal); t = deepcopy(m.predictVarTypeRTVal); l = deepcopy(m.predictIndelLengthRTVal)
+    base = m.predictBaseRTVal; z = m.predictZygosityRTVal; t = m.predictVarTypeRTVal; l = m.predictIndelLengthRTVal
     if end2 == 0:
-        end = end2; num = num2; XBatch = deepcopy(XBatch2); posBatch = deepcopy(posBatch2)
+        end = end2; num = num2; XBatch = XBatch2; posBatch = posBatch2
         end2, num2, XBatch2, posBatch2 = next(tensorGenerator)
         while True:
             if end == 1:
@@ -183,11 +182,11 @@ def Test(args, m, utils):
             if end2 == 0:
                 end3, num3, XBatch3, posBatch3 = next(tensorGenerator)
             for t in threadPool: t.join()
-            base = deepcopy(m.predictBaseRTVal); z = deepcopy(m.predictZygosityRTVal); t = deepcopy(m.predictVarTypeRTVal); l = deepcopy(m.predictIndelLengthRTVal)
+            base = m.predictBaseRTVal; z = m.predictZygosityRTVal; t = m.predictVarTypeRTVal; l = m.predictIndelLengthRTVal
             if end == 0:
-                end = end2; num = num2; XBatch = deepcopy(XBatch2); posBatch = deepcopy(posBatch2)
+                end = end2; num = num2; XBatch = XBatch2; posBatch = posBatch2
             if end2 == 0:
-                end2 = end3; num2 = num3; XBatch2 = deepcopy(XBatch3); posBatch2 = deepcopy(posBatch3)
+                end2 = end3; num2 = num3; XBatch2 = XBatch3; posBatch2 = posBatch3
             #print >> sys.stderr, end, end2, end3, terminate
             if terminate == 1:
                 break

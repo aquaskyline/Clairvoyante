@@ -177,6 +177,7 @@ class Clairvoyante(object):
     def trainNoRT(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
+        self.trainLossRTVal = None; self.trainSummaryRTVal = None
         self.trainLossRTVal, _, self.trainSummaryRTVal = self.session.run( (self.loss, self.training_op, self.merged_summary_op),
                                               feed_dict={self.XPH:batchX, self.YPH:batchY, self.learningRatePH:self.learningRateVal,
                                               self.phasePH:True, self.dropoutRatePH:self.dropoutRateVal})
@@ -190,6 +191,7 @@ class Clairvoyante(object):
     def getLossNoRT(self, batchX, batchY):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(batchX[i])
+        self.getLossLossRTVal = None
         self.getLossLossRTVal = self.session.run( self.loss, feed_dict={self.XPH:batchX, self.YPH:batchY, self.phasePH:False, self.dropoutRatePH:0.0})
 
     def setLearningRate(self, learningRate=None):
@@ -222,6 +224,7 @@ class Clairvoyante(object):
     def predictNoRT(self, XArray):
         #for i in range(len(batchX)):
         #    tf.image.per_image_standardization(XArray[i])
+        self.predictBaseRTVal = None; self.predictZygosityRTVal = None; self.predictVarTypeRTVal = None; self.predictIndelLengthRTVal = None
         self.predictBaseRTVal, self.predictZygosityRTVal, self.predictVarTypeRTVal, self.predictIndelLengthRTVal \
                                              = self.session.run( (self.YBaseChangeSigmoid, self.YZygositySoftmax, self.YVarTypeSoftmax, self.YIndelLengthSoftmax),
                                                                   feed_dict={self.XPH:XArray,
