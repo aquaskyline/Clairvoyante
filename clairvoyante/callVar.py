@@ -89,19 +89,13 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                 dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,1])
                 if varLength != maxVarLength:
                     for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
-                        if varZygosity == 1:
-                            altBase += num2base[np.argmax(XBatch[j,k,:,0]+XBatch[j,k,:,1])]
-                        elif varZygosity == 0:
-                            altBase += num2base[np.argmax(XBatch[j,k,:,1])]
+                        altBase += num2base[np.argmax(XBatch[j,k,:,1])]
                 else:
                     for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
                         referenceTensor = XBatch[j,k,:,0]; insertionTensor = XBatch[j,k,:,1]
                         if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
                             inferredIndelLength += 1
-                            if varZygosity == 1:
-                                altBase += num2base[np.argmax(referenceTensor+insertionTensor)]
-                            elif varZygosity == 0:
-                                altBase += num2base[np.argmax(insertionTensor)]
+                            altBase += num2base[np.argmax(insertionTensor)]
                         else:
                             break
                 coordination = int(coordination)
