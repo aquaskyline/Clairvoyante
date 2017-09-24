@@ -50,7 +50,9 @@ def PlotFiltersConv(ofn, units, interval=1, xsize=18, ysize=20, xts=1, yts=1, lt
         plt.subplot(nRows, nColumns, i+1)
         plt.title('Filter ' + str(i))
         plt.xticks(np.arange(0, xlen, interval), ['A','C','G','T'])
-        plt.imshow(units[0,:,:,i], interpolation="nearest", cmap=plt.cm.Purples)
+        plt.imshow(units[0,:,:,i], interpolation="nearest", cmap=plt.cm.bwr)
+    cax = plt.axes([0.92, 0.4, 0.01, 0.3])
+    plt.colorbar(cax=cax)
     plot.savefig(ofn, dpi=300, transparent=True, bbox_inches='tight')
     plt.close(plot)
 
@@ -65,6 +67,8 @@ def PlotFiltersFC(ofn, units, interval=10, xsize=18, ysize=4, xts=1, yts=1, lts=
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title(str(cell) + ' units')
     plt.imshow(np.reshape(units[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
+    cax = plt.axes([0.4, 0.4, 0.2, 0.02])
+    plt.colorbar(cax=cax, orientation="horizontal")
     plot.savefig(ofn, dpi=300, transparent=True, bbox_inches='tight')
     plt.close(plot)
 
@@ -76,15 +80,16 @@ def PlotOutputArray(ofn, unitsX, unitsY, interval=1, xsize=8, ysize=2, xts=1, yt
     plot = plt.figure(1, figsize=(xsize,ysize))
     cell = unitsX.shape[1]
     plt.subplot(2,1,1)
-    plt.xticks(np.arange(0, cell, interval))
+    plt.xticks(np.arange(0, cell, interval), ["A","C","G","T","HET","HOM","REF","SNP","INS","DEL","0","1","2","3","4",">4"])
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title("Predicted")
     plt.imshow(np.reshape(unitsX[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
     plt.subplot(2,1,2)
-    plt.xticks(np.arange(0, cell, interval))
+    plt.xticks(np.arange(0, cell, interval), ["A","C","G","T","HET","HOM","REF","SNP","INS","DEL","0","1","2","3","4",">4"])
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title("Truth")
     plt.imshow(np.reshape(unitsY[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
+    plt.colorbar(orientation="horizontal", pad=0.3)
     plot.savefig(ofn, dpi=300, transparent=True, bbox_inches='tight')
     plt.close(plot)
 
