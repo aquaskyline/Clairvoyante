@@ -66,6 +66,8 @@ def Run(args):
     minCoverage = args.minCoverage
     sampleName = args.sampleName
     ctgName = args.ctgName
+    if ctgName == None:
+        sys.exit("--ctgName must be specified. You can call variants on multiple chromosomes simultaneously.")
     if args.considerleftedge:
         considerleftedge = "--considerleftedge"
     else:
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--sampleName', type=str, default = "SAMPLE",
             help="Define the sample name to be shown in the VCF file")
 
-    parser.add_argument('--ctgName', type=str, default="chr17",
+    parser.add_argument('--ctgName', type=str, default=None,
             help="The name of sequence to be processed, default: %(default)s")
 
     parser.add_argument('--ctgStart', type=int, default=None,
