@@ -5,6 +5,8 @@ import param
 import shlex
 import subprocess
 import signal
+import random
+import time
 
 class InstancesClass(object):
     def __init__(self):
@@ -77,6 +79,11 @@ def Run(args):
     else:
         ctgRange = ""
 
+    if args.delay > 0:
+        delay = random.randrange(0, args.delay)
+        print >> sys.stderr, "Delay %d seconds before starting variant calling ..." % (delay)
+        time.sleep(delay)
+
     try:
         c.EVCInstance = subprocess.Popen(\
             shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s --threshold %s --minCoverage %s --samtools %s" %\
@@ -91,7 +98,7 @@ def Run(args):
                         (CVBin, chkpnt_fn, call_fn, sampleName) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
-        print e
+        print >> sys.stderr, e
         sys.exit("Failed to start required processes. Exiting...")
 
     signal.signal(signal.SIGALRM, CheckRtCode)
@@ -156,6 +163,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
             help="Train using the slim version of Clairvoyante, optional")
+
+    parser.add_argument('--delay', type=int, default = 10,
+            help="Wait a short while for no more than %(default)s to start the job. This is to avoid starting multiple jobs simultaneously that might use up the maximum number of threads allowed, because Tensorflow will create more threads than needed at the beginning of running the program.")
 
     args = parser.parse_args()
 
