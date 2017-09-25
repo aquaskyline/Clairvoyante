@@ -179,6 +179,10 @@ Folder | Tech | Aligner | Ref | Sample |
 
 ***
 
+## Limitations
+### On variants with two alternative alleles (GT: 1/2)
+Clairvoyante network version 3 can only output one of the two possible alternative alleles at a position. We will further extend the network to support genome variants with two alternative alleles.
+
 ## Miscellaneous
 ### Run on MARCC
 ```
