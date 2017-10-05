@@ -4,6 +4,7 @@ import argparse
 import param
 import shlex
 import subprocess
+import multiprocessing
 import signal
 import random
 import time
@@ -79,6 +80,11 @@ def Run(args):
     else:
         ctgRange = ""
 
+    maxCpus = multiprocessing.cpu_count()
+    if args.threads == None: numCpus = multiprocessing.cpu_count()
+    else: numCpus = args.threads if args.threads < multiprocessing.cpu_count() else multiprocessing.cpu_count()
+    cpuSet = ",".join(str(x) for x in random.sample(xrange(0, maxCpus), numCpus))
+
     if args.delay > 0:
         delay = random.randrange(0, args.delay)
         print >> sys.stderr, "Delay %d seconds before starting variant calling ..." % (delay)
@@ -94,8 +100,8 @@ def Run(args):
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
-            shlex.split("python %s --chkpnt_fn %s --call_fn %s --sampleName %s" %\
-                        (CVBin, chkpnt_fn, call_fn, sampleName) ),\
+            shlex.split("taskset -c %s python %s --chkpnt_fn %s --call_fn %s --sampleName %s" %\
+                        (cpuSet, CVBin, chkpnt_fn, call_fn, sampleName) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
         print >> sys.stderr, e
@@ -163,6 +169,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
             help="Train using the slim version of Clairvoyante, optional")
+
+    parser.add_argument('--threads', type=int, default = None,
+            help="Number of threads, optional")
 
     parser.add_argument('--delay', type=int, default = 10,
             help="Wait a short while for no more than %(default)s to start the job. This is to avoid starting multiple jobs simultaneously that might use up the maximum number of threads allowed, because Tensorflow will create more threads than needed at the beginning of running the program.")

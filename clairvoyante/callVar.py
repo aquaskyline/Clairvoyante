@@ -34,8 +34,11 @@ def Run(args):
             import clairvoyante_v3_slim as cv
         else:
             import clairvoyante_v3 as cv
-    if args.tensor_fn == "PIPE":
-        param.NUM_THREADS = 4
+    if args.threads == None:
+        if args.tensor_fn == "PIPE":
+            param.NUM_THREADS = 4
+    else:
+        param.NUM_THREADS = args.threads
     m = cv.Clairvoyante()
     m.init()
 
@@ -209,6 +212,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--showRef', type=param.str2bool, nargs='?', const=False, default = False,
             help="Show reference calls, optional")
+
+    parser.add_argument('--threads', type=int, default = None,
+            help="Number of threads, optional")
 
     parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
