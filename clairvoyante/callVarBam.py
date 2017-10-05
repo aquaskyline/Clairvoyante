@@ -100,8 +100,8 @@ def Run(args):
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
-            shlex.split("taskset -c %s python %s --chkpnt_fn %s --call_fn %s --sampleName %s" %\
-                        (cpuSet, CVBin, chkpnt_fn, call_fn, sampleName) ),\
+            shlex.split("taskset -c %s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d" %\
+                        (cpuSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
         print >> sys.stderr, e
