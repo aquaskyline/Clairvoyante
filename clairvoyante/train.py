@@ -126,7 +126,7 @@ def TrainAll(args, m, utils):
             # Output the model
             if args.ochk_prefix != None:
                 parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
-                m.saveParameters(parameterOutputPath % i)
+                m.saveParameters(os.path.abspath(parameterOutputPath % i))
             # Adaptive learning rate decay
             c += 1
             flag = 0
