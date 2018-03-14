@@ -152,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument('--ctgEnd', type=int, default=None,
             help="The inclusive ending position of the sequence to be processed")
 
-    parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=False, default=False,
+    parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=True, default=True,
             help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
 
     parser.add_argument('--samtools', type=str, default="samtools",
@@ -164,10 +164,10 @@ if __name__ == "__main__":
     parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
 
-    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=False, default = False,
+    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=True, default = False,
             help="Use Clairvoyante version 2")
 
-    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=True, default = False,
             help="Train using the slim version of Clairvoyante, optional")
 
     parser.add_argument('--threads', type=int, default = None,

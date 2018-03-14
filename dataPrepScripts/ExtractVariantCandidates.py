@@ -7,6 +7,7 @@ import argparse
 import re
 import shlex
 import subprocess
+import param
 from math import log
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
@@ -17,9 +18,12 @@ def OutputCandidate(ctgName, pos, baseCount, refBase, minCoverage, threshold):
     if totalCount < minCoverage:
         return None
 
+    denominator = totalCount
+    if denominator == 0:
+        denominator = 1
     baseCount.sort(key = lambda x:-x[1]) # sort baseCount descendingly
-    p0 = float(baseCount[0][1]) / totalCount
-    p1 = float(baseCount[1][1]) / totalCount
+    p0 = float(baseCount[0][1]) / denominator
+    p1 = float(baseCount[1][1]) / denominator
     output = []
     if (p0 <= 1.0 - threshold and p1 >= threshold) or baseCount[0][0] != refBase:
         output = [ctgName, pos+1, refBase, totalCount]
@@ -39,6 +43,10 @@ class CandidateStdout(object):
 
 
 def MakeCandidates( args ):
+    if args.gen4Training == True:
+        args.minCoverage = 0
+        args.threshold = 0
+
     ref_fp = open(args.ref_fn, 'r')
     refSeq = None
     for name, refSeq, _ in readfq(ref_fp):
@@ -167,6 +175,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--minCoverage', type=float, default=4,
             help="Minimum coverage required to call a variant, default: %(default)d")
+
+    parser.add_argument('--gen4Training', type=param.str2bool, nargs='?', const=True, default=False,
+            help="Output all genome positions as candidate for model training (Set --threshold to 0, --minCoverage to 0)")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, default: %(default)s")

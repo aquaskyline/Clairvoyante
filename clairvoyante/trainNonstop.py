@@ -166,10 +166,10 @@ if __name__ == "__main__":
     parser.add_argument('--v3', type=param.str2bool, nargs='?', const=True, default = True,
             help="Use Clairvoyante version 3")
 
-    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=False, default = False,
+    parser.add_argument('--v2', type=param.str2bool, nargs='?', const=True, default = False,
             help="Use Clairvoyante version 2")
 
-    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=True, default = False,
             help="Train using the slim version of Clairvoyante, optional")
 
     args = parser.parse_args()

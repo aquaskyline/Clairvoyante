@@ -66,8 +66,8 @@ def PlotFiltersFC(ofn, units, interval=10, xsize=18, ysize=4, xts=1, yts=1, lts=
     plt.xticks(np.arange(0, cell, interval))
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title(str(cell) + ' units')
-    plt.imshow(np.reshape(units[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
-    cax = plt.axes([0.4, 0.4, 0.2, 0.02])
+    plt.imshow(np.reshape(units[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.bwr)
+    cax = plt.axes([0.45, 0.05, 0.2, 0.05])
     plt.colorbar(cax=cax, orientation="horizontal")
     plot.savefig(ofn, dpi=300, transparent=True, bbox_inches='tight')
     plt.close(plot)
@@ -83,13 +83,13 @@ def PlotOutputArray(ofn, unitsX, unitsY, interval=1, xsize=8, ysize=2, xts=1, yt
     plt.xticks(np.arange(0, cell, interval), ["A","C","G","T","HET","HOM","REF","SNP","INS","DEL","0","1","2","3","4",">4"])
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title("Predicted")
-    plt.imshow(np.reshape(unitsX[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
+    plt.imshow(np.reshape(unitsX[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.bwr)
     plt.subplot(2,1,2)
     plt.xticks(np.arange(0, cell, interval), ["A","C","G","T","HET","HOM","REF","SNP","INS","DEL","0","1","2","3","4",">4"])
     plt.yticks(np.arange(0, 1, 1), [''])
     plt.title("Truth")
-    plt.imshow(np.reshape(unitsY[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.Purples)
-    plt.colorbar(orientation="horizontal", pad=0.3)
+    plt.imshow(np.reshape(unitsY[0,:], (-1,cell)), interpolation="nearest", cmap=plt.cm.bwr)
+    plt.colorbar(orientation="horizontal", pad=0.5)
     plot.savefig(ofn, dpi=300, transparent=True, bbox_inches='tight')
     plt.close(plot)
 
@@ -159,7 +159,7 @@ def ParseArgs():
     parser.add_argument('--chkpnt_fn', type=str, default = None,
             help="Input a checkpoint for testing or continue training")
 
-    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=False, default = False,
+    parser.add_argument('--slim', type=param.str2bool, nargs='?', const=True, default = False,
             help="Train using the slim version of Clairvoyante, default: False")
 
     args = parser.parse_args()
