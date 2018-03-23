@@ -119,7 +119,7 @@ def TrainAll(args, m, utils):
             logging.info(" ".join([str(i), "Training loss:", str(trainLossSum/trainingTotal), "Validation loss: ", str(validationLossSum/numValItems)]))
             logging.info("Epoch time elapsed: %.2f s" % (time.time() - epochStart))
             parameterOutputPath = "%s-%%0%dd" % ( args.ochk_prefix, param.parameterOutputPlaceHolder )
-            m.saveParameters(parameterOutputPath % i)
+            m.saveParameters(os.path.abspath(parameterOutputPath % i))
 
             # Reset per epoch variables
             i += 1;

@@ -1,5 +1,5 @@
 NUM_THREADS = 12
-maxEpoch = 1000
+maxEpoch = 10000
 parameterOutputPlaceHolder = 6
 
 # Tensor related parameters, please use the same values for creating tensor, model training and variant calling

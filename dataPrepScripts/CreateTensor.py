@@ -2,7 +2,6 @@ import os
 homeDir = os.path.expanduser('~')
 import sys
 sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
-from readfq import readfq
 import argparse
 import os
 import re
@@ -44,10 +43,12 @@ def GenerateTensor(ctgName, alns, center, refSeq):
                 else:
                     print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
 
-    outputLine = "%s %d %s" % (ctgName, center, refSeq[center-(param.flankingBaseNum+1):center+param.flankingBaseNum])
-    for x in alnCode:
-        outputLine += " %0.1f" % x
-    return outputLine
+    newRefPos = center - (0 if args.refStart == None else (args.refStart - 1))
+    if (newRefPos - (param.flankingBaseNum+1) >= 0):
+        outputLine = "%s %d %s %s" % (ctgName, center, refSeq[newRefPos-(param.flankingBaseNum+1):newRefPos+param.flankingBaseNum], " ".join("%0.1f" % x for x in alnCode))
+        return outputLine
+    else:
+        return None
 
 def GetCandidate(args, beginToEnd):
     if args.can_fn != "PIPE":
@@ -82,22 +83,40 @@ class TensorStdout(object):
 
 
 def OutputAlnTensor(args):
-    refSeq = None
-    ref_fp = open(args.ref_fn, 'r')
-    for name, refSeq, _ in readfq(ref_fp):
-        if name != args.ctgName:
-            continue
-        break
 
-    if refSeq == None:
-        print >> sys.stderr, "Cannot find reference sequence %s" % (args.ctgName)
+    args.refStart = None; args.refEnd = None; refSeq = []; refName = None; rowCount = 0
+    if args.ctgStart and args.ctgEnd:
+        args.refStart = args.ctgStart; args.refEnd = args.ctgEnd
+        args.refStart -= param.expandReferenceRegion
+        args.refStart = 1 if args.refStart < 1 else args.refStart
+        args.refEnd += param.expandReferenceRegion
+        p1 = subprocess.Popen(shlex.split("%s faidx %s %s:%d-%d" % (args.samtools, args.ref_fn, args.ctgName, args.refStart, args.refEnd) ), stdout=subprocess.PIPE, bufsize=8388608)
+    else:
+        args.ctgStart = args.ctgEnd = None
+        subprocess.Popen(shlex.split("%s faidx %s %s" % (args.samtools, args.ref_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+
+    for row in p1.stdout:
+        if rowCount == 0:
+            refName = row.rstrip().lstrip(">")
+        else:
+            refSeq.append(row.rstrip())
+        rowCount += 1
+    refSeq = "".join(refSeq)
+
+    if len(refSeq) == 0:
+        print >> sys.stderr, "Failed to load reference seqeunce."
         sys.exit(1)
+    else:
+        pass
+        #print >> sys.stderr, "Loaded reference %s: %d characters, %d rows" % (refName, len(refSeq), rowCount)
+    p1.stdout.close()
+    p1.wait()
 
     beginToEnd = {}
     canPos = 0
     canGen = GetCandidate(args, beginToEnd)
 
-    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+    p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if args.ctgStart and args.ctgEnd\
         else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
@@ -109,7 +128,7 @@ def OutputAlnTensor(args):
     else:
         tensor_fp = TensorStdout(sys.stdout)
 
-    for l in p.stdout:
+    for l in p2.stdout:
         l = l.split()
         if l[0][0] == "@":
             continue
@@ -145,7 +164,7 @@ def OutputAlnTensor(args):
                             centerToAln.setdefault(rCenter, [])
                             centerToAln[rCenter].append([])
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], SEQ[queryPos] ) )
+                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], SEQ[queryPos] ) )
                     if refPos in endToCenter:
                         center = endToCenter[refPos]
                         activeSet.remove(center)
@@ -163,7 +182,7 @@ def OutputAlnTensor(args):
             elif m.group(2) == "D":
                 for i in xrange(advance):
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos], "-" ))
+                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], "-" ))
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
                         if rCenter not in activeSet:
@@ -180,17 +199,19 @@ def OutputAlnTensor(args):
         for center in centerToAln.keys():
             if center + (param.flankingBaseNum+1) < POS:
                 l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
-                tensor_fp.stdin.write(l)
-                tensor_fp.stdin.write("\n")
+                if l != None:
+                    tensor_fp.stdin.write(l)
+                    tensor_fp.stdin.write("\n")
                 del centerToAln[center]
 
     for center in centerToAln.keys():
         l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
-        tensor_fp.stdin.write(l)
-        tensor_fp.stdin.write("\n")
+        if l != None:
+            tensor_fp.stdin.write(l)
+            tensor_fp.stdin.write("\n")
 
-    p.stdout.close()
-    p.wait()
+    p2.stdout.close()
+    p2.wait()
     if args.tensor_fn != "PIPE":
         tensor_fp.stdin.close()
         tensor_fp.wait()

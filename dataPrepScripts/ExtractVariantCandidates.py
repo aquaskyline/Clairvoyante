@@ -2,7 +2,6 @@ import os
 homeDir = os.path.expanduser('~')
 import sys
 sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
-from readfq import readfq
 import argparse
 import re
 import shlex
@@ -47,18 +46,38 @@ def MakeCandidates( args ):
         args.minCoverage = 0
         args.threshold = 0
 
-    ref_fp = open(args.ref_fn, 'r')
-    refSeq = None
-    for name, refSeq, _ in readfq(ref_fp):
-        if name != args.ctgName:
-            continue
-        break
-
-    if refSeq == None:
-        print >> sys.stderr, "Cannot find reference sequence %s" % (args.ctgName)
+    if os.path.isfile("%s.fai" % (args.ref_fn)) == False:
+        print >> sys.stderr, "Fasta index %s.fai doesn't exist." % (args.ref_fn)
         sys.exit(1)
 
-    p = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+    args.refStart = None; args.refEnd = None; refSeq = []; refName = None; rowCount = 0
+    if args.ctgStart and args.ctgEnd:
+        args.refStart = args.ctgStart; args.refEnd = args.ctgEnd
+        args.refStart -= param.expandReferenceRegion
+        args.refStart = 1 if args.refStart < 1 else args.refStart
+        args.refEnd += param.expandReferenceRegion
+        p1 = subprocess.Popen(shlex.split("%s faidx %s %s:%d-%d" % (args.samtools, args.ref_fn, args.ctgName, args.refStart, args.refEnd) ), stdout=subprocess.PIPE, bufsize=8388608)
+    else:
+        args.ctgStart = args.ctgEnd = None
+        subprocess.Popen(shlex.split("%s faidx %s %s" % (args.samtools, args.ref_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+    for row in p1.stdout:
+        if rowCount == 0:
+            refName = row.rstrip().lstrip(">")
+        else:
+            refSeq.append(row.rstrip())
+        rowCount += 1
+    refSeq = "".join(refSeq)
+
+    if len(refSeq) == 0:
+        print >> sys.stderr, "Failed to load reference seqeunce."
+        sys.exit(1)
+    else:
+        pass
+        #print >> sys.stderr, "Loaded reference %s: %d characters, %d rows" % (refName, len(refSeq), rowCount)
+    p1.stdout.close()
+    p1.wait()
+
+    p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if args.ctgStart and args.ctgEnd\
         else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
@@ -71,7 +90,7 @@ def MakeCandidates( args ):
     else:
         can_fp = CandidateStdout(sys.stdout)
 
-    for l in p.stdout:
+    for l in p2.stdout:
         l = l.strip().split()
         if l[0][0] == "@":
             continue
@@ -128,7 +147,7 @@ def MakeCandidates( args ):
                 sweep += 1
                 continue
             baseCount = pileup[sweep].items()
-            refBase = refSeq[sweep]
+            refBase = refSeq[sweep - (0 if args.refStart == None else (args.refStart - 1))]
             out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
                 totalCount, outline = out
@@ -142,15 +161,15 @@ def MakeCandidates( args ):
     remainder.sort()
     for pos in remainder:
         baseCount = pileup[pos].items()
-        refBase = refSeq[pos]
+        refBase = refSeq[pos - (0 if args.refStart == None else (args.refStart - 1))]
         out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
             totalCount, outline = out
             can_fp.stdin.write(outline)
             can_fp.stdin.write("\n")
 
-    p.stdout.close()
-    p.wait()
+    p2.stdout.close()
+    p2.wait()
     if args.can_fn != "PIPE":
         can_fp.stdin.close()
         can_fp.wait()

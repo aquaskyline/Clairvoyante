@@ -1,5 +1,6 @@
 flankingBaseNum = 16
 matrixNum = 4
+expandReferenceRegion = 1000000
 
 
 def str2bool(v):

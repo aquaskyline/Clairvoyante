@@ -33,7 +33,10 @@ def GetTensor( tensor_fn, num ):
     rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
     pos = []
     for row in fo: # A variant per row
-        chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
+        try:
+            chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
+        except ValueError:
+            print >> sys.stderr, "UnpackATensorRecord Failure", row
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
             continue
         pos.append(chrom + ":" + coord + ":" + seq)
