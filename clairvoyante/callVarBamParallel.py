@@ -24,7 +24,7 @@ def Run(args):
     chkpnt_fn = CheckFileExist(args.chkpnt_fn, sfx=".meta")
     bam_fn = CheckFileExist(args.bam_fn)
     ref_fn = CheckFileExist(args.ref_fn)
-    fai_fn = CheckFileExist("%s.fai" % (args.ref_fn))
+    bed_fn = CheckFileExist(args.bed_fn)
     output_prefix = args.output_prefix
     threshold = args.threshold
     minCoverage = args.minCoverage
@@ -37,21 +37,21 @@ def Run(args):
         considerleftedge = ""
     refChunkSize = args.refChunkSize
 
-    fai_fp = open(fai_fn)
-    for line in fai_fp:
+    bed_fp = open(bed_fn)
+    for line in bed_fp:
 
         fields = line.strip().split("\t")
 
         chromName = fields[0]
-        chromLength = int(fields[1])
-        regionStart = 1
+        regionStart = int(fields[1])
+        chromLength = int(fields[2])
 
         while regionStart < chromLength:
             start = regionStart
             end = regionStart + refChunkSize - 1
             if end > chromLength:
                 end = chromLength
-            output_fn = "%s.%s_%d_%d" % (output_prefix, chromName, regionStart, end)
+            output_fn = "%s.%s_%d_%d.vcf" % (output_prefix, chromName, regionStart, end)
             print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, considerleftedge) )
             regionStart = end + 1
 
@@ -66,6 +66,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
+
+    parser.add_argument('--bed_fn', type=str, default="ref.bed",
+            help="Call variant only in these regions, default: %(default)s")
 
     parser.add_argument('--refChunkSize', type=int, default=10000000,
             help="Divide job with smaller genome chunk size for parallelism, default: %(default)s")
