@@ -59,7 +59,7 @@ def MakeCandidates( args ):
         p1 = subprocess.Popen(shlex.split("%s faidx %s %s:%d-%d" % (args.samtools, args.ref_fn, args.ctgName, args.refStart, args.refEnd) ), stdout=subprocess.PIPE, bufsize=8388608)
     else:
         args.ctgStart = args.ctgEnd = None
-        subprocess.Popen(shlex.split("%s faidx %s %s" % (args.samtools, args.ref_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+        p1 = subprocess.Popen(shlex.split("%s faidx %s %s" % (args.samtools, args.ref_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
     for row in p1.stdout:
         if rowCount == 0:
             refName = row.rstrip().lstrip(">")
