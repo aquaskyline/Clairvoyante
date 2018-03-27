@@ -123,7 +123,7 @@ if __name__ == "__main__":
             description="Call variants using a trained Clairvoyante model and a BAM file" )
 
     parser.add_argument('--chkpnt_fn', type=str, default = None,
-            help="Input a checkpoint for testing or continue training")
+            help="Input a Clairvoyante model")
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
