@@ -235,7 +235,7 @@ def OutputAlnTensor(args):
                         tensor_fp.stdin.write(l)
                         tensor_fp.stdin.write("\n")
                     availableSlots += sum(len(i) for i in centerToAln[center])
-                    print >> sys.stderr, "POS %d: remaining slots %d" % (center, availableSlots)
+                    #print >> sys.stderr, "POS %d: remaining slots %d" % (center, availableSlots)
                     del centerToAln[center]
 
     for center in centerToAln.keys():
