@@ -174,6 +174,8 @@ def OutputAlnTensor(args):
                 continue
 
         for m in re.finditer(cigarRe, CIGAR):
+            if availableSlots == 0:
+                break
             advance = int(m.group(1))
             if m.group(2) == "S":
                 queryPos += advance
