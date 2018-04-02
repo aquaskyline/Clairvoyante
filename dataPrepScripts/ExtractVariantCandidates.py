@@ -6,8 +6,16 @@ import argparse
 import re
 import shlex
 import subprocess
+import gc
+import signal
 import param
 from math import log
+
+is_pypy = '__pypy__' in sys.builtin_module_names
+
+def PypyGCCollect(signum, frame):
+    gc.collect()
+    signal.alarm(60)
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
 
@@ -90,6 +98,10 @@ def MakeCandidates( args ):
     else:
         can_fp = CandidateStdout(sys.stdout)
 
+    #if is_pypy:
+    #    signal.signal(signal.SIGALRM, PypyGCCollect)
+    #    signal.alarm(60)
+
     for l in p2.stdout:
         l = l.strip().split()
         if l[0][0] == "@":
@@ -132,6 +144,7 @@ def MakeCandidates( args ):
                 for pos, base in matches:
                     pileup.setdefault(pos, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
                     pileup[pos][base] += 1
+                del matches
             elif m.group(2) == "I":
                 pileup.setdefault(refPos, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
                 pileup[refPos-1]["I"] += 1

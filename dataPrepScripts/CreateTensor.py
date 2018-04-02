@@ -7,7 +7,15 @@ import os
 import re
 import shlex
 import subprocess
+import signal
+import gc
 import param
+
+is_pypy = '__pypy__' in sys.builtin_module_names
+
+def PypyGCCollect(signum, frame):
+    gc.collect()
+    signal.alarm(60)
 
 cigarRe = r"(\d+)([MIDNSHP=X])"
 base2num = dict(zip("ACGT", (0,1,2,3)))
@@ -84,6 +92,8 @@ class TensorStdout(object):
 
 def OutputAlnTensor(args):
 
+    availableSlots = 10000000
+    dcov = args.dcov
     args.refStart = None; args.refEnd = None; refSeq = []; refName = None; rowCount = 0
     if args.ctgStart and args.ctgEnd:
         args.refStart = args.ctgStart; args.refEnd = args.ctgEnd
@@ -128,7 +138,13 @@ def OutputAlnTensor(args):
     else:
         tensor_fp = TensorStdout(sys.stdout)
 
+    #if is_pypy:
+    #    signal.signal(signal.SIGALRM, PypyGCCollect)
+    #    signal.alarm(60)
+
+    previousPos = 0; depthCap = 0
     for l in p2.stdout:
+        #print >> sys.stderr, l
         l = l.split()
         if l[0][0] == "@":
             continue
@@ -148,6 +164,15 @@ def OutputAlnTensor(args):
         while canPos != -1 and canPos < (POS + len(SEQ) + 100000):
             canPos = next(canGen)
 
+        if previousPos != POS:
+            previousPos = POS
+            depthCap = 0
+        else:
+            depthCap += 1
+            if depthCap >= dcov:
+                #print >> sys.stderr, "Bypassing POS %d at depth %d\n" % (POS, depthCap)
+                continue
+
         for m in re.finditer(cigarRe, CIGAR):
             advance = int(m.group(1))
             if m.group(2) == "S":
@@ -164,25 +189,32 @@ def OutputAlnTensor(args):
                             centerToAln.setdefault(rCenter, [])
                             centerToAln[rCenter].append([])
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], SEQ[queryPos] ) )
+                        if availableSlots != 0:
+                            availableSlots -= 1
+                            centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], SEQ[queryPos] ) )
                     if refPos in endToCenter:
                         center = endToCenter[refPos]
                         activeSet.remove(center)
                     refPos += 1
                     queryPos += 1
+                del matches
 
             elif m.group(2) == "I":
                 queryAdv = 0
                 for i in range(advance):
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, queryAdv, "-", SEQ[queryPos] ))
+                        if availableSlots != 0:
+                            availableSlots -= 1
+                            centerToAln[center][-1].append( (refPos, queryAdv, "-", SEQ[queryPos] ))
                     queryPos += 1
                     queryAdv += 1
 
             elif m.group(2) == "D":
                 for i in xrange(advance):
                     for center in list(activeSet):
-                        centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], "-" ))
+                        if availableSlots != 0:
+                            availableSlots -= 1
+                            centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], "-" ))
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
                         if rCenter not in activeSet:
@@ -195,14 +227,16 @@ def OutputAlnTensor(args):
                         activeSet.remove(center)
                     refPos += 1
 
-
-        for center in centerToAln.keys():
-            if center + (param.flankingBaseNum+1) < POS:
-                l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
-                if l != None:
-                    tensor_fp.stdin.write(l)
-                    tensor_fp.stdin.write("\n")
-                del centerToAln[center]
+        if depthCap == 0:
+            for center in centerToAln.keys():
+                if center + (param.flankingBaseNum+1) < POS:
+                    l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
+                    if l != None:
+                        tensor_fp.stdin.write(l)
+                        tensor_fp.stdin.write("\n")
+                    availableSlots += sum(len(i) for i in centerToAln[center])
+                    print >> sys.stderr, "POS %d: remaining slots %d" % (center, availableSlots)
+                    del centerToAln[center]
 
     for center in centerToAln.keys():
         l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
@@ -249,6 +283,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=True, default=True,
             help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
+
+    parser.add_argument('--dcov', type=int, default=250,
+            help="Cap depth per position at %(default)s")
 
     args = parser.parse_args()
 

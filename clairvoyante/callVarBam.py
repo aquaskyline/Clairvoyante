@@ -79,6 +79,7 @@ def Run(args):
         ctgRange = "--ctgStart %s --ctgEnd %s" % (args.ctgStart, args.ctgEnd)
     else:
         ctgRange = ""
+    dcov = args.dcov
 
     maxCpus = multiprocessing.cpu_count()
     if args.threads == None: numCpus = multiprocessing.cpu_count()
@@ -96,8 +97,8 @@ def Run(args):
                         (pypyBin, EVCBin, bam_fn, ref_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
                         stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CTInstance = subprocess.Popen(\
-            shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s %s --samtools %s" %\
-                        (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin) ),\
+            shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s %s --samtools %s --dcov %d" %\
+                        (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin, dcov) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
             shlex.split("taskset -c %s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d" %\
@@ -154,6 +155,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--considerleftedge', type=param.str2bool, nargs='?', const=True, default=True,
             help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
+
+    parser.add_argument('--dcov', type=int, default=250,
+            help="Cap depth per position at %(default)s")
 
     parser.add_argument('--samtools', type=str, default="samtools",
             help="Path to the 'samtools', default: %(default)s")
