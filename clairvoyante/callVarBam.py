@@ -85,6 +85,11 @@ def Run(args):
     if args.threads == None: numCpus = multiprocessing.cpu_count()
     else: numCpus = args.threads if args.threads < multiprocessing.cpu_count() else multiprocessing.cpu_count()
     cpuSet = ",".join(str(x) for x in random.sample(xrange(0, maxCpus), numCpus))
+    taskSet = "taskset -c %s"
+    try:
+        subprocess.check_output("which %s" % (taskset), shell=True)
+    except:
+        taskSet = ""
 
     if args.delay > 0:
         delay = random.randrange(0, args.delay)
@@ -101,8 +106,8 @@ def Run(args):
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin, dcov) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
-            shlex.split("taskset -c %s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d" %\
-                        (cpuSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus) ),\
+            shlex.split("%s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d" %\
+                        (taskSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
         print >> sys.stderr, e
