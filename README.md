@@ -1,8 +1,16 @@
 # Clairvoyante - A deep neural network based variant caller
 [![License: CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-nc-sa/4.0/)  
 Contact: Ruibang Luo  
-Email: rbluo@cs.hku.hk
+Email: rbluo@cs.hku.hk  
+
 ***
+
+## Installation
+```shell
+git clone --depth=1 https://github.com/aquaskyline/Clairvoyante.git
+cd Clairvoyante
+curl http://www.bio8.cs.hku.hk/trainedModels.tgz | tar -jxf -
+```
 
 ## Introduction (Clairvoyante as a Variant Caller)
 Identifying the variants of DNA sequences sensitively and accurately is an important but challenging task in the field of genomics. This task is particularly difficult when dealing with Single Molecule Sequencing, the error rate of which is still tens to hundreds of times higher than Next Generation Sequencing. With the increasing prevalence of Single Molecule Sequencing, an efficient variant caller will not only expedite basic research but also enable various downstream applications. To meet this demand, we developed Clairvoyante, a multi-task five-layer convolutional neural network model for predicting variant type, zygosity, alternative allele and Indel length. On NA12878, Clairvoyante achieved 99.73%, 97.68% and 95.36% accuracy on known variants, and achieved 98.19%, 91.71%, 72.71% F1 score on the whole genome, in Illumina, PacBio, and Oxford Nanopore data, respectively. Training Clairvoyante with a sample and call variant on another shows that Clairvoyante is sample agnostic and general for variant calling. A slim version of Clairvoyante with reduced model parameters produced a much lower F1, suggesting the full model's power in disentangling subtle details in read alignment. Clairvoyante is the first method for Single Molecule Sequencing to finish a whole genome variant calling in two hours on a 28 CPU-core machine, with top-tier accuracy and sensitivity. A toolset was developed to train, utilize and visualize the Clairvoyante model easily, and is publically available here is this repo.
@@ -20,7 +28,7 @@ Identifying the variants of DNA sequences sensitively and accurately is an impor
 Make sure you have Tensorflow ≥ 1.0.0 installed, the following commands install the lastest CPU version of Tensorflow:  
 
 ```shell
-pip install tensorflow
+pip install tensorflow  
 pip install blosc  
 pip install intervaltree  
 pip install numpy  
@@ -38,7 +46,7 @@ To do variant calling using trained models, CPU will suffice. Clairvoyante uses 
 pip install tensorflow-gpu
 ```
 
-Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS). It can be translated to Python3 using "2to3" just like other projects.
+Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS). It can be translated to Python3 using "2to3" just like other projects.  
 
 ### Performance of GPUs in model training
 Folder | Seconds per Epoch per 10M Variant Tensors |
@@ -64,7 +72,7 @@ cd pypy-5.8-linux_x86_64-portable/bin
 # Use pypy as an inplace substitution of python to run the scripts in dataPrepScripts/
 ```
 
-If you can use apt-get or yum in your system, please install both `pypy` and `pypy-dev` packages. And then install the pip for pypy.
+If you can use apt-get or yum in your system, please install both `pypy` and `pypy-dev` packages. And then install the pip for pypy.  
 
 ```shell
 sudo apt-get install pypy pypy-dev
@@ -74,14 +82,14 @@ sudo pypy -m pip install blosc
 sudo pypy -m pip install intervaltree 
 ```
 
-To guarantee a good user experience, pypy must be installed to run `callVarBam.py` (call variants from BAM), and `callVarBamParallel.py` that generate parallelizable commands to run `callVarBam.py`.
-Tensorflow is optimized using Cython thus not compatible with `pypy`. For the list of scripts compatible to `pypy`, please refer to the **Folder Stucture and Program Descriptions** section.
-*Pypy is an awesome Python JIT intepreter, you can donate to [the project](https://pypy.org).*
+To guarantee a good user experience, pypy must be installed to run `callVarBam.py` (call variants from BAM), and `callVarBamParallel.py` that generate parallelizable commands to run `callVarBam.py`.  
+Tensorflow is optimized using Cython thus not compatible with `pypy`. For the list of scripts compatible to `pypy`, please refer to the **Folder Stucture and Program Descriptions** section.  
+*Pypy is an awesome Python JIT intepreter, you can donate to [the project](https://pypy.org).*  
 
 ***
 
 ## Quick Start with Variant Calling
-You have a slow way and a quick way to get some demo variant calls. The slow way generates required files from VCF and BAM files. The fast way downloads the required files.
+You have a slow way and a quick way to get some demo variant calls. The slow way generates required files from VCF and BAM files. The fast way downloads the required files.  
 ### Download testing dataset
 #### I have plenty of time
 
@@ -120,6 +128,7 @@ cd training
 python ../clairvoyante/callVar.py --chkpnt_fn ../trainedModels/fullv3-illumina-novoalign-hg001+hg002-hg38/learningRate1e-3.epoch500 --tensor_fn tensor_can_chr21 --call_fn tensor_can_chr21.vcf
 less tensor_can_chr21.vcf
 ```
+
 ***
 
 ## How to call variant directly from BAM
@@ -147,13 +156,13 @@ cat commands.sh | parallel -j4
 vcfcat hg001*.vcf | vcfstreamsort | bgziptabix hg001.vcf.gz
 ```
 
-`parallel -j4` will run 4 commands in parallel. Each command using at most `--tensorflowThreads 4` threads. `vcfcat`, `vcfstreamsort` and `bgziptabix` are a part of **vcflib**.
+`parallel -j4` will run 4 commands in parallel. Each command using at most `--tensorflowThreads 4` threads. `vcfcat`, `vcfstreamsort` and `bgziptabix` are a part of **vcflib**.  
 
 ***
 
 ## VCF Output Format
 `clairvoyante/callVar.py` outputs variants in VCF format with version 4.1 specifications.  
-Clairvoyante can predict the exact length of insertions and deletions shorter than or equal to 4bp. For insertions and deletions with a length between 5bp to 15bp, callVar guesses the length from input tensors. The indels with guessed length are denoted with a `LENGUESS` info tag. Although the guessed indel length might be incorrect, users can still benchmark Clairvoyante's sensitivity by matching the indel positions to other callsets. For indels longer than 15bp, `callVar.py` outputs them as SV without providing an alternative allele. To fit into a different usage scenario, Clairvoyante allows users to extend its model easily to support exact length prediction on longer indels by adding categories to the model output. However, this requires additional training data on the new categories. Users can also increase the length limit from where an indel is outputted as a SV by increasing the parameter flankingBaseNum from 16bp to a higher value. This extends the flanking bases to be considered with a candidate variant. 
+Clairvoyante can predict the exact length of insertions and deletions shorter than or equal to 4bp. For insertions and deletions with a length between 5bp to 15bp, callVar guesses the length from input tensors. The indels with guessed length are denoted with a `LENGUESS` info tag. Although the guessed indel length might be incorrect, users can still benchmark Clairvoyante's sensitivity by matching the indel positions to other callsets. For indels longer than 15bp, `callVar.py` outputs them as SV without providing an alternative allele. To fit into a different usage scenario, Clairvoyante allows users to extend its model easily to support exact length prediction on longer indels by adding categories to the model output. However, this requires additional training data on the new categories. Users can also increase the length limit from where an indel is outputted as a SV by increasing the parameter flankingBaseNum from 16bp to a higher value. This extends the flanking bases to be considered with a candidate variant.  
 
 ***
 
@@ -178,16 +187,16 @@ Please visit: `jupyter_nb/demo.ipynb`
 `jupyter_nb/visualization.ipynb`
 
 ### Output tensors and layer activations to PNG figures
-`getTensorAndLayerPNG.py`. You will need to input a model, a file with one or more tensors created by `CreateTensor.py` and optionally a file with the truth variants created by `GetTruth.py`. The script will create 7 PNG figures for each line of tensor, including 1) input tensors; 2) conv1 layer activations; 3) conv2 layer activations; 4) conv3 layer activations; 5) fc4 layer activations; 6) fc5 layer activations and 7) output predictions and the truth.
+`getTensorAndLayerPNG.py`. You will need to input a model, a file with one or more tensors created by `CreateTensor.py` and optionally a file with the truth variants created by `GetTruth.py`. The script will create 7 PNG figures for each line of tensor, including 1) input tensors; 2) conv1 layer activations; 3) conv2 layer activations; 4) conv3 layer activations; 5) fc4 layer activations; 6) fc5 layer activations and 7) output predictions and the truth.  
 
 ### Tensorboard
-The `--olog_dir` option provided in the training scripts outputs a folder of log files readable by the Tensorboard. It can be used to visualize the dynamics of parameters during training at each epoch.
-You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Embedding` page to analyze the predictions made by a model. `clairvoyante/getEmbedding.py` helps you to prepare a folder for the purpose.
+The `--olog_dir` option provided in the training scripts outputs a folder of log files readable by the Tensorboard. It can be used to visualize the dynamics of parameters during training at each epoch.  
+You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Embedding` page to analyze the predictions made by a model. `clairvoyante/getEmbedding.py` helps you to prepare a folder for the purpose.  
 
 ***
 
 ## Folder Stucture and Program Descriptions
-*You can also run the program to get the parameter details.*
+*You can also run the program to get the parameter details.*  
 
 
 `dataPrepScripts/` | Data Preparation Scripts. Outputs are gzipped unless using standard output. Scripts in this folder are compatible with `pypy`.
@@ -223,12 +232,12 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 `utils_v2.py` | Helper functions to the netowork.
 
 
-*GIAB provides a BED file that marks the high confidence regions in the reference. The models perform better by using only the truth variants in these regions for training. If you don't have such a BED file, you can use a BED file that covers the whole genome where needed.*
+*GIAB provides a BED file that marks the high confidence regions in the reference. The models perform better by using only the truth variants in these regions for training. If you don't have such a BED file, you can use a BED file that covers the whole genome where needed.*  
 
 ***
 
 ## About the Trained Models
-The trained models are in the `trainedModels/` folder.
+The trained models are in the `trainedModels/` folder.  
 
 
 Folder | Tech | Aligner | Ref | Sample |
@@ -247,13 +256,13 @@ Folder | Tech | Aligner | Ref | Sample |
 
 <sup>3</sup> [Nanopore WGS Consortium](https://github.com/nanopore-wgs-consortium/NA12878)  
 
-<sup>\*</sup> Each folder contains one or more models. Each model contains three files suffixed `data-00000-of-00001`, `index` and `meta`, respectively. Only the prefix is needed when using the model with Clairvoyante. Using the prefix `learningRate1e-3.epoch999.learningRate1e-4.epoch1499` as an example, it means that the model has trained for 1000 epochs at learning rate 1e<sup>-3</sup>, then another 500 epochs at learning rate 1e<sup>-4</sup>. Lambda for L2 regularization was set the same as learning rate. 
+<sup>\*</sup> Each folder contains one or more models. Each model contains three files suffixed `data-00000-of-00001`, `index` and `meta`, respectively. Only the prefix is needed when using the model with Clairvoyante. Using the prefix `learningRate1e-3.epoch999.learningRate1e-4.epoch1499` as an example, it means that the model has trained for 1000 epochs at learning rate 1e<sup>-3</sup>, then another 500 epochs at learning rate 1e<sup>-4</sup>. Lambda for L2 regularization was set the same as learning rate.  
 
 ***
 
 ## About Setting the Alternative Alelle Frequency Cutoff
 
-Different from model training, in which all genome positions are candidates but randomly subsampled for training, variant calling using a trained model will require the user to define a minimal alternative allele frequency cutoff for a genome position to be considered as a candidate for variant calling. For all sequencing technologies, the lower the cutoff, the lower the speed. Setting a cutoff too low will increase the false positive rate significantly, while too high will increase the false negative rate significantly. The option `--threshold` controls the cutoff in these three scripts `callVarBam.py`, `callVarBamParallel.py` and `ExtractVariantCandidates.py`. The suggested cutoff is listed below for different sequencing technologies. A higher cutoff will increase the accuracy of datasets with poor sequencing quality, while a lower cutoff will increase the sensitivity in applications like clinical research. Setting a lower cutoff and further filter the variants by their quality is also a good practice.
+Different from model training, in which all genome positions are candidates but randomly subsampled for training, variant calling using a trained model will require the user to define a minimal alternative allele frequency cutoff for a genome position to be considered as a candidate for variant calling. For all sequencing technologies, the lower the cutoff, the lower the speed. Setting a cutoff too low will increase the false positive rate significantly, while too high will increase the false negative rate significantly. The option `--threshold` controls the cutoff in these three scripts `callVarBam.py`, `callVarBamParallel.py` and `ExtractVariantCandidates.py`. The suggested cutoff is listed below for different sequencing technologies. A higher cutoff will increase the accuracy of datasets with poor sequencing quality, while a lower cutoff will increase the sensitivity in applications like clinical research. Setting a lower cutoff and further filter the variants by their quality is also a good practice.  
 
 Seqeuncing Technology | Alt. AF Cutoff |
 :---: |:---:|
@@ -272,7 +281,6 @@ The testing dataset 'testingData.tar' includes:
 
 ## Limitations
 ### On variants with two alternative alleles (GT: 1/2)
-Clairvoyante network version 3 can only output one of the two possible alternative alleles at a position. We will further extend the network to support genome variants with two alternative alleles.
-
+Clairvoyante network version 3 can only output one of the two possible alternative alleles at a position. We will further extend the network to support genome variants with two alternative alleles.  
 
 
