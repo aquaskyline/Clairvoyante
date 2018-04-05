@@ -40,7 +40,7 @@ To check the version of Tensorflow you have installed:
 python -c 'import tensorflow as tf; print(tf.__version__)'
 ```
 
-To do variant calling using trained models, CPU will suffice. Clairvoyante uses all available CPU cores by default in `callVar.py`, use 4 threads by default in `callVarBam.py`, and can be controled by the parameter `--threads`. To train a new model, a high-end GPU along with the GPU version of Tensorflow is needed. To install the GPU version of tensorflow:  
+To do variant calling using trained models, CPU will suffice. Clairvoyante uses all available CPU cores by default in `callVar.py`, use 4 threads by default in `callVarBam.py`, and can be controlled using the parameter `--threads`. To train a new model, a high-end GPU along with the GPU version of Tensorflow is needed. To install the GPU version of tensorflow:  
 
 ```shell
 pip install tensorflow-gpu
@@ -61,7 +61,7 @@ GTX 680 | 780 |
 
 
 ### Speed up with PyPy
-Without a change to the code, using PyPy python intepreter on some tensorflow independent modules such as `dataPrepScripts/ExtractVariantCandidates.py` and `dataPrepScripts/CreateTensor.py` gives a 5-10 times speed up. Pypy python intepreter can be installed by apt-get, yum, Homebrew, Macports and etc. If you have no root access to your system, the offical website of Pypy provides a portable binary distribution for Linux. Following is a rundown extracted from Pypy's website (pypy-5.8 in this case) on how to install the binaries.  
+Without a change to the code, using PyPy python interpreter on some tensorflow independent modules such as `dataPrepScripts/ExtractVariantCandidates.py` and `dataPrepScripts/CreateTensor.py` gives a 5-10 times speed up. Pypy python interpreter can be installed by apt-get, yum, Homebrew, MacPorts, etc. If you have no root access to your system, the official website of Pypy provides a portable binary distribution for Linux. Following is a rundown extracted from Pypy's website (pypy-5.8 in this case) on how to install the binaries.  
 
 ```shell
 wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.8-1-linux_x86_64-portable.tar.bz2
@@ -183,7 +183,7 @@ Please visit: `jupyter_nb/demo.ipynb`
 ***
 
 ## Visualization
-### Interactively visualizing Input Tensors, Activiation in Hidden Layers and Comparing Predicted Results (Suggested)
+### Interactively visualizing Input Tensors, Activation in Hidden Layers and Comparing Predicted Results (Suggested)
 `jupyter_nb/visualization.ipynb`
 
 ### Output tensors and layer activations to PNG figures
@@ -198,13 +198,12 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 ## Folder Stucture and Program Descriptions
 *You can also run the program to get the parameter details.*  
 
-
 `dataPrepScripts/` | Data Preparation Scripts. Outputs are gzipped unless using standard output. Scripts in this folder are compatible with `pypy`.
 --- | ---
-`ExtractVariantCandidates.py`| Extract the position of variant candidiates. Input: BAM; Reference FASTA. Important options: --threshold "Minimum alternative allelic fraction to report a candidate"; --minCoverage "Minimum coverage to report a candidate".
+`ExtractVariantCandidates.py`| Extract the position of variant candidates. Input: BAM; Reference FASTA. Important options: --threshold "Minimum alternative allelic fraction to report a candidate"; --minCoverage "Minimum coverage to report a candidate".
 `GetTruth.py`| Extract the variants from a truth VCF. Input: VCF.
-`CreateTensor.py`| Create tensors for candidates or truth variants. Input: A candidate list; BAM; Reference FASTA. Important option: --considerleftedge "Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor. Enable if you are 1) using reads shorter than 100bp, 2) using  a tensor with flanking length longer than 16bp, and 3) you are using amplicon sequencing or other sequencing technologies, in which reads starting positions are random is not a basic assumption".
-`PairWithNonVariants.py`| Pair truth variant tensors with non-variant tensors. Input: Truth variants tensors; Candidate variant tensors. Important options: --amp x "1-time truth variants + x-time non-vairants".
+`CreateTensor.py`| Create tensors for candidates or truth variants. Input: A candidate list; BAM; Reference FASTA. Important option: --considerleftedge "Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor. Enable if you are 1) using reads shorter than 100bp, 2) using a tensor with flanking length longer than 16bp, and 3) you are using amplicon sequencing or other sequencing technologies, in which reads starting positions are random is not a basic assumption".
+`PairWithNonVariants.py`| Pair truth variant tensors with non-variant tensors. Input: Truth variants tensors; Candidate variant tensors. Important options: --amp x "1-time truth variants + x-time non-variants".
 `ChooseItemInBed.py`| Helper script. Output the items overlapping with input the BED file.
 `CountNumInBed.py`| Helper script. Count the number of items overlapping with the input BED file.
 `param.py`| Global parameters for the scripts in the folder.
@@ -217,19 +216,19 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 `callVar.py `| Call variants using candidate variant tensors.
 `callVarBam.py` | Call variants directly from a BAM file.
 `callVarBamParallel.py` | Generate `callVarBam.py` commands that can be run in parallel. A BED file is required to specify the regions for variant calling. `--refChunkSize` set the genome chuck size per job.
-`demoRun.py` | A **Demo** showing how to training a model from scratch.
+`demoRun.py` | A **Demo** showing how to train a model from scratch.
 `evaluate.py` | Evaluate a model in terms of base change, zygosity, variant type and indel length.
 `param.py` |  Hyperparameters for model training and other global parameters for the scripts in the folder.
 `tensor2Bin.py` |  Create a compressed binary tensors file to facilitate and speed up future usage. Input: Mixed tensors by PairWithNonVariants.py; Truth variants by GetTruth.py and a BED file marks the high confidence regions in the reference genome.
-`train.py` |  Training a model using adaptive learning rate decay. By default the learning rate will decay for three times. Input a binary tensors file created by Tensor2Bin.py is highly recommended.
+`train.py` |  Training a model using adaptive learning rate decay. By default, the learning rate will decay for three times. Input a binary tensors file created by Tensor2Bin.py is highly recommended.
 `trainNonstop.py` |  Helper script. Train a model continuously using the same learning rate and l2 regularization lambda.
 `trainWithoutValidationNonstop.py` | Helper script. Train a model continuously using the same learning rate and l2 regularization lambda. Take all the input tensors as training data and do not calculate loss in the validation data.
 `calTrainDevDiff.py` | Helper script. Calculate the training loss and validation loss on a trained model.
 `getTensorAndLayerPNG.py` | Create high resolution PNG figures to visualize input tensor, layer activations and output.
-`getEmbedding.py` | Prepare a folder readable by Tensorboard for visualzing predicted results.
-`clairvoyante_v3.py` | Clairvoyante netowork topology v3.
-`clairvoyante_v3_slim.py` | Clairvoyante netowork topology v3 slim. With 10 times less parameters than the full network, it trains about 1.5 times faster than the full network. It performs only about 1% less in precision and recall rates for Illumina data.
-`utils_v2.py` | Helper functions to the netowork.
+`getEmbedding.py` | Prepare a folder readable by Tensorboard for visualizing predicted results.
+`clairvoyante_v3.py` | Clairvoyante network topology v3.
+`clairvoyante_v3_slim.py` | Clairvoyante network topology v3 slim. With ten times fewer parameters than the full network, it trains about 1.5 times faster than the full network. It performs only about 1% less in precision and recall rates for Illumina data.
+`utils_v2.py` | Helper functions to the network.
 
 
 *GIAB provides a BED file that marks the high confidence regions in the reference. The models perform better by using only the truth variants in these regions for training. If you don't have such a BED file, you can use a BED file that covers the whole genome where needed.*  
@@ -260,15 +259,15 @@ Folder | Tech | Aligner | Ref | Sample |
 
 ***
 
-## About Setting the Alternative Alelle Frequency Cutoff
+## About Setting the Alternative Allele Frequency Cutoff
 
 Different from model training, in which all genome positions are candidates but randomly subsampled for training, variant calling using a trained model will require the user to define a minimal alternative allele frequency cutoff for a genome position to be considered as a candidate for variant calling. For all sequencing technologies, the lower the cutoff, the lower the speed. Setting a cutoff too low will increase the false positive rate significantly, while too high will increase the false negative rate significantly. The option `--threshold` controls the cutoff in these three scripts `callVarBam.py`, `callVarBamParallel.py` and `ExtractVariantCandidates.py`. The suggested cutoff is listed below for different sequencing technologies. A higher cutoff will increase the accuracy of datasets with poor sequencing quality, while a lower cutoff will increase the sensitivity in applications like clinical research. Setting a lower cutoff and further filter the variants by their quality is also a good practice.  
 
-Seqeuncing Technology | Alt. AF Cutoff |
+Sequencing Technology | Alt. AF Cutoff |
 :---: |:---:|
-Illumina | 0.1 |
-PacBio P5-C3 | 0.25 |
-ONT R9.4 | 0.35 |
+Illumina | 0.125 |
+PacBio P5-C3 | 0.2 |
+ONT R9.4 | 0.25 |
 
 ***
 
