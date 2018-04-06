@@ -244,9 +244,9 @@ Folder | Tech | Aligner | Ref | Sample |
 `fullv3-illumina-novoalign-hg001+hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878+NA24385 |
 `fullv3-illumina-novoalign-hg001-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878 |
 `fullv3-illumina-novoalign-hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA24385 |
-`fullv3-pacbio-ngmlr-hg001+hg002-hg19` | PacBio P5-C3<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385 |
-`fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P5-C3<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878 |
-`fullv3-pacbio-ngmlr-hg002-hg19` | PacBio P5-C3<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA24385 |
+`fullv3-pacbio-ngmlr-hg001+hg002-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385 |
+`fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878 |
+`fullv3-pacbio-ngmlr-hg002-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA24385 |
 `fullv3-ont-ngmlr-hg001-hg19` | Oxford Nanopore Minion R9.4<sup>3</sup> | NGMLR 0.2.6 | hg19 | NA12878 |
 
 <sup>1</sup> Also using Illumina TruSeq (LT) DNA PCR-Free Sample Prep Kits, *Zook et al. Extensive sequencing of seven human genomes to characterize benchmark reference materials. 2016*  
@@ -266,7 +266,7 @@ Different from model training, in which all genome positions are candidates but 
 Sequencing Technology | Alt. AF Cutoff |
 :---: |:---:|
 Illumina | 0.125 |
-PacBio P5-C3 | 0.2 |
+PacBio P6-C4 | 0.2 |
 ONT R9.4 | 0.25 |
 
 ***
