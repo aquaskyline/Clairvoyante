@@ -49,9 +49,9 @@ pip install tensorflow-gpu
 Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS). It can be translated to Python3 using "2to3" just like other projects.  
 
 ### Performance of GPUs in model training
-Folder | Seconds per Epoch per 10M Variant Tensors |
+GPU | Seconds per Epoch per 10M Variant Tensors |
 :---: |:---:|
-GTX 1080 Ti | 180 |
+GTX 1080 Ti | 170 |
 GTX 980 | 350 |
 GTX Titan | 520 |
 Tesla K40 (-ac 3004,875) | 580 |
