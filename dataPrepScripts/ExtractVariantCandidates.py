@@ -59,7 +59,8 @@ def MakeCandidates( args ):
         sys.exit(1)
 
     args.refStart = None; args.refEnd = None; refSeq = []; refName = None; rowCount = 0
-    if args.ctgStart and args.ctgEnd:
+    if args.ctgStart != None and args.ctgEnd != None:
+        args.ctgStart += 1
         args.refStart = args.ctgStart; args.refEnd = args.ctgEnd
         args.refStart -= param.expandReferenceRegion
         args.refStart = 1 if args.refStart < 1 else args.refStart
@@ -86,7 +87,7 @@ def MakeCandidates( args ):
     p1.wait()
 
     p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
-        if args.ctgStart and args.ctgEnd\
+        if args.ctgStart != None and args.ctgEnd != None\
         else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     pileup = {}
@@ -161,7 +162,10 @@ def MakeCandidates( args ):
                 continue
             baseCount = pileup[sweep].items()
             refBase = refSeq[sweep - (0 if args.refStart == None else (args.refStart - 1))]
-            out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
+            out = None
+            if args.ctgStart != None and args.ctgEnd != None:
+                if pos >= args.ctgStart and pos <= args.ctgEnd:
+                    out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
                 totalCount, outline = out
                 can_fp.stdin.write(outline)
@@ -175,7 +179,10 @@ def MakeCandidates( args ):
     for pos in remainder:
         baseCount = pileup[pos].items()
         refBase = refSeq[pos - (0 if args.refStart == None else (args.refStart - 1))]
-        out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
+        out = None
+        if args.ctgStart != None and args.ctgEnd != None:
+            if pos >= args.ctgStart and pos <= args.ctgEnd:
+                out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
             totalCount, outline = out
             can_fp.stdin.write(outline)

@@ -9,12 +9,12 @@ def CheckFileExist(fn, sfx=""):
         sys.exit("Error: %s not found" % (fn+sfx))
     return os.path.abspath(fn)
 
-def CheckCmdExist(fn):
+def CheckCmdExist(cmd):
     try:
-        subprocess.check_output("which %s" % (fn), shell=True)
+        subprocess.check_output("which %s" % (cmd), shell=True)
     except:
-        sys.exit("Error: %s executable not found" % (fn))
-    return fn
+        sys.exit("Error: %s executable not found" % (cmd))
+    return cmd
 
 def Run(args):
     basedir = os.path.dirname(__file__)
@@ -25,6 +25,7 @@ def Run(args):
     bam_fn = CheckFileExist(args.bam_fn)
     ref_fn = CheckFileExist(args.ref_fn)
     bed_fn = CheckFileExist(args.bed_fn)
+    vcf_fn = "--vcf_fn %s" % (CheckFileExist(args.vcf_fn)) if args.vcf_fn != None else ""
     output_prefix = args.output_prefix
     threshold = args.threshold
     minCoverage = args.minCoverage
@@ -48,12 +49,12 @@ def Run(args):
 
         while regionStart < chromLength:
             start = regionStart
-            end = regionStart + refChunkSize - 1
+            end = regionStart + refChunkSize
             if end > chromLength:
                 end = chromLength
             output_fn = "%s.%s_%d_%d.vcf" % (output_prefix, chromName, regionStart, end)
-            print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, considerleftedge) )
-            regionStart = end + 1
+            print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
+            regionStart = end
 
 
 if __name__ == "__main__":
@@ -75,6 +76,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--bam_fn', type=str, default="bam.bam",
             help="BAM file input, default: %(default)s")
+
+    parser.add_argument('--vcf_fn', type=str, default=None,
+            help="Candidate sites VCF file input, if provided, variants will only be called at the sites in the VCF file,  default: %(default)s")
 
     parser.add_argument('--output_prefix', type=str, default = None,
             help="Output prefix")

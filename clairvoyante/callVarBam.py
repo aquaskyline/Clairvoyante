@@ -28,7 +28,7 @@ def CheckRtCode(signum, frame):
     #print >> sys.stderr, c.EVCInstance.returncode, c.CTInstance.returncode, c.CVInstance.returncode
     if c.EVCInstance.returncode != None and c.EVCInstance.returncode != 0:
         c.CTInstance.kill(); c.CVInstance.kill()
-        sys.exit("ExtractVariantCandidates.py exited with exceptions. Exiting...");
+        sys.exit("ExtractVariantCandidates.py or GetTruth.py exited with exceptions. Exiting...");
 
     if c.CTInstance.returncode != None and c.CTInstance.returncode != 0:
         c.EVCInstance.kill(); c.CVInstance.kill()
@@ -47,16 +47,17 @@ def CheckFileExist(fn, sfx=""):
         sys.exit("Error: %s not found" % (fn+sfx))
     return os.path.abspath(fn)
 
-def CheckCmdExist(fn):
+def CheckCmdExist(cmd):
     try:
-        subprocess.check_output("which %s" % (fn), shell=True)
+        subprocess.check_output("which %s" % (cmd), shell=True)
     except:
-        sys.exit("Error: %s executable not found" % (fn))
-    return fn
+        sys.exit("Error: %s executable not found" % (cmd))
+    return cmd
 
 def Run(args):
     basedir = os.path.dirname(__file__)
     EVCBin = CheckFileExist(basedir + "/../dataPrepScripts/ExtractVariantCandidates.py")
+    GTBin = CheckFileExist(basedir + "/../dataPrepScripts/GetTruth.py")
     CTBin = CheckFileExist(basedir + "/../dataPrepScripts/CreateTensor.py")
     CVBin = CheckFileExist(basedir + "/callVar.py")
     pypyBin = CheckCmdExist(args.pypy)
@@ -64,6 +65,9 @@ def Run(args):
     chkpnt_fn = CheckFileExist(args.chkpnt_fn, sfx=".meta")
     bam_fn = CheckFileExist(args.bam_fn)
     ref_fn = CheckFileExist(args.ref_fn)
+    vcf_fn = None
+    if args.vcf_fn != None:
+        vcf_fn = CheckFileExist(args.vcf_fn)
     call_fn = args.call_fn
     threshold = args.threshold
     minCoverage = args.minCoverage
@@ -75,7 +79,7 @@ def Run(args):
         considerleftedge = "--considerleftedge"
     else:
         considerleftedge = ""
-    if args.ctgStart and args.ctgEnd and int(args.ctgStart) <= int(args.ctgEnd):
+    if args.ctgStart != None and args.ctgEnd != None and int(args.ctgStart) <= int(args.ctgEnd):
         ctgRange = "--ctgStart %s --ctgEnd %s" % (args.ctgStart, args.ctgEnd)
     else:
         ctgRange = ""
@@ -97,10 +101,16 @@ def Run(args):
         time.sleep(delay)
 
     try:
-        c.EVCInstance = subprocess.Popen(\
-            shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s --threshold %s --minCoverage %s --samtools %s" %\
-                        (pypyBin, EVCBin, bam_fn, ref_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
-                        stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
+        if vcf_fn == None:
+            c.EVCInstance = subprocess.Popen(\
+                shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s --threshold %s --minCoverage %s --samtools %s" %\
+                            (pypyBin, EVCBin, bam_fn, ref_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
+                            stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
+        else:
+            c.EVCInstance = subprocess.Popen(\
+                shlex.split("%s %s --vcf_fn %s --ctgName %s %s" %\
+                            (pypyBin, GTBin, vcf_fn, ctgName, ctgRange) ),\
+                            stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CTInstance = subprocess.Popen(\
             shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s %s --samtools %s --dcov %d" %\
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin, dcov) ),\
@@ -139,6 +149,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--call_fn', type=str, default = None,
             help="Output variant predictions")
+
+    parser.add_argument('--vcf_fn', type=str, default=None,
+            help="Candidate sites VCF file input, if provided, variants will only be called at the sites in the VCF file,  default: %(default)s")
 
     parser.add_argument('--threshold', type=float, default=0.125,
             help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: %(default)f")
