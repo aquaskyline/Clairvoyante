@@ -281,6 +281,9 @@ The testing dataset 'testingData.tar' includes:
 
 ## Limitations
 ### On variants with two alternative alleles (GT: 1/2)
+
 Clairvoyante network version 3 can only output one of the two possible alternative alleles at a position. We will further extend the network to support genome variants with two alternative alleles.  
 
+### On training
 
+In rare cases, the model training will stuck early at a local optimal and cannot be further optimized without a higher learning rate. As we observed ,the problem only happens at the very beginning of model training, and can be predicated if the loss remains stable in the first few training epochs.  
