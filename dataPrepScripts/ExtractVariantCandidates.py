@@ -166,6 +166,8 @@ def MakeCandidates( args ):
             if args.ctgStart != None and args.ctgEnd != None:
                 if pos >= args.ctgStart and pos <= args.ctgEnd:
                     out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
+            else:
+                out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
                 totalCount, outline = out
                 can_fp.stdin.write(outline)
@@ -183,6 +185,8 @@ def MakeCandidates( args ):
         if args.ctgStart != None and args.ctgEnd != None:
             if pos >= args.ctgStart and pos <= args.ctgEnd:
                 out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
+        else:
+            out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
             totalCount, outline = out
             can_fp.stdin.write(outline)
