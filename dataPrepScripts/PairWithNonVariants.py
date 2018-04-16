@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_fn', type=str, default = None,
             help="Tensors output file name")
 
-    parser.add_argument('--amp', type=int, default = 2,
+    parser.add_argument('--amp', type=float, default = 2,
         help="Pick ((# of the Truth Variants)*amp) non-variants to pair with the Truth Variants, default: 2")
 
     args = parser.parse_args()
