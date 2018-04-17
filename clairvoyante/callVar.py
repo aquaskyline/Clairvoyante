@@ -68,8 +68,8 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             sortVarType = np.sort(t[j])[::-1]
             sortZygosity = np.sort(z[j])[::-1]
             sortLength = np.sort(l[j])[::-1]
-            qual = int(-4.343 * log((sortVarType[1]*sortZygosity[1]*sortLength[1]  + 1e-10) / (sortVarType[0]*sortZygosity[0]*sortLength[0]  + 1e-10)))
-            if qual > 99: qual = 99
+            qual = int(-4.343 * log((sortVarType[1]*sortZygosity[1]*sortLength[1]  + 1e-300) / (sortVarType[0]*sortZygosity[0]*sortLength[0]  + 1e-300)))
+            if qual > 999: qual = 999
             # Get possible alternative bases
             sortBase = base[j].argsort()[::-1]
             base1 = num2base[sortBase[0]]
