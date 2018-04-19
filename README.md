@@ -9,7 +9,7 @@ Email: rbluo@cs.hku.hk
 ```shell
 git clone --depth=1 https://github.com/aquaskyline/Clairvoyante.git
 cd Clairvoyante
-curl http://www.bio8.cs.hku.hk/trainedModels.tgz | tar -jxf -
+curl http://www.bio8.cs.hku.hk/trainedModels.tbz | tar -jxf -
 ```
 
 ## Introduction (Clairvoyante as a Variant Caller)
@@ -245,6 +245,7 @@ Folder | Tech | Aligner | Ref | Sample |
 `fullv3-illumina-novoalign-hg001+hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878+NA24385 |
 `fullv3-illumina-novoalign-hg001-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878 |
 `fullv3-illumina-novoalign-hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA24385 |
+`fullv3-pacbio-ngmlr-hg001+hg002+hg003+hg004-hg19` | mainly PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385+NA24149+NA24143 |
 `fullv3-pacbio-ngmlr-hg001+hg002-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385 |
 `fullv3-pacbio-ngmlr-hg001-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878 |
 `fullv3-pacbio-ngmlr-hg002-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA24385 |
