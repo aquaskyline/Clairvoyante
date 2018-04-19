@@ -1,5 +1,5 @@
 # Clairvoyante - A deep neural network based variant caller
-[![License: CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-nc-sa/4.0/)  
+[License: NPOSL-3.0](https://opensource.org/licenses/NOSL3.0)  
 Contact: Ruibang Luo  
 Email: rbluo@cs.hku.hk  
 
