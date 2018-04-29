@@ -141,7 +141,7 @@ less tensor_can_chr21.vcf
 | Reference Genome | `GRCh38_full_analysis_set_plus_decoy_hla.fa` |
 | BED for where to call variants | `GRCh38_whole_genome.bed` |
 
-* `GRCh38_whole_genome.bed` was generated using command `awk '{print $1"\t0\t"$2}' GRCh38_full_analysis_set_plus_decoy_hla.fa.fai`
+* `GRCh38_whole_genome.bed` was generated firstly using the command `awk '{print $1"\t0\t"$2}' GRCh38_full_analysis_set_plus_decoy_hla.fa.fai > GRCh38_whole_genome.bed`, and then manually removing the alternative sequences and decay sequences from the bed file.
 
 ### Commands
 ```shell
