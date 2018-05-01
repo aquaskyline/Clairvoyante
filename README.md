@@ -109,7 +109,7 @@ tar -zxf training.tar.gz
 ```
 
 ### Call variants
-#### Call variants from a BAM file and a trained model
+#### Call variants from at known variant sites using a BAM file and a trained model
 
 ```shell
 cd training
@@ -139,7 +139,9 @@ less tensor_can_chr21.vcf
 | :---: | :---: |
 | BAM | `GIAB_v3.2.2_Illumina_50x_GRCh38_HG001.bam` | 
 | Reference Genome | `GRCh38_full_analysis_set_plus_decoy_hla.fa` |
-| BED for high-confidence regions | `GIAB_v3.2.2_GRCh38_HG001.bed` |
+| BED for where to call variants | `GRCh38_whole_genome.bed` |
+
+* `GRCh38_whole_genome.bed` was generated firstly using the command `awk '{print $1"\t0\t"$2}' GRCh38_full_analysis_set_plus_decoy_hla.fa.fai > GRCh38_whole_genome.bed`, and then manually removing the alternative sequences and decay sequences from the bed file.
 
 ### Commands
 ```shell
@@ -147,6 +149,7 @@ python clairvoyante/callVarBamParallel.py \
        --chkpnt_fn trainedModels/fullv3-illumina-novoalign-hg001+hg002-hg38/learningRate1e-3.epoch500 \
        --ref_fn GRCh38_full_analysis_set_plus_decoy_hla.fa \
        --bam_fn GIAB_v3.2.2_Illumina_50x_GRCh38_HG001.bam \
+       --bed_fn GRCh38_whole_genome.bed \
        --sampleName HG001 \
        --output_prefix hg001 \
        --threshold 0.125 \
