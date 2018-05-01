@@ -147,11 +147,11 @@ def MakeCandidates( args ):
                     pileup[pos][base] += 1
                 del matches
             elif m.group(2) == "I":
-                pileup.setdefault(refPos, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
+                pileup.setdefault(refPos-1, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
                 pileup[refPos-1]["I"] += 1
                 for i in range(advance): queryPos += 1
             elif m.group(2) == "D":
-                pileup.setdefault(refPos, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
+                pileup.setdefault(refPos-1, {"A":0,"C":0,"G":0,"T":0,"I":0,"D":0,"N":0})
                 pileup[refPos-1]["D"] += 1
                 for i in range(advance): refPos += 1
 
