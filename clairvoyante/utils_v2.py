@@ -130,6 +130,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
         if bed_fn != None:
             if chrom not in tree: continue
             if len(tree[chrom].search(int(coord))) == 0: continue
+        seq = seq.upper()
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: continue
         key = chrom + ":" + coord
 
