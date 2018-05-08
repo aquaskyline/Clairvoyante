@@ -65,6 +65,11 @@ def Run(args):
     chkpnt_fn = CheckFileExist(args.chkpnt_fn, sfx=".meta")
     bam_fn = CheckFileExist(args.bam_fn)
     ref_fn = CheckFileExist(args.ref_fn)
+    if args.bed_fn == None:
+        bed_fn = ""
+    else:
+        bed_fn = CheckFileExist(args.bed_fn)
+        bed_fn = "--bed_fn %s" % (bed_fn)
     vcf_fn = None
     if args.vcf_fn != None:
         vcf_fn = CheckFileExist(args.vcf_fn)
@@ -103,8 +108,8 @@ def Run(args):
     try:
         if vcf_fn == None:
             c.EVCInstance = subprocess.Popen(\
-                shlex.split("%s %s --bam_fn %s --ref_fn %s --ctgName %s %s --threshold %s --minCoverage %s --samtools %s" %\
-                            (pypyBin, EVCBin, bam_fn, ref_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
+                shlex.split("%s %s --bam_fn %s --ref_fn %s %s --ctgName %s %s --threshold %s --minCoverage %s --samtools %s" %\
+                            (pypyBin, EVCBin, bam_fn, ref_fn, bed_fn, ctgName, ctgRange, threshold, minCoverage, samtoolsBin) ),\
                             stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         else:
             c.EVCInstance = subprocess.Popen(\
@@ -143,6 +148,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
+
+    parser.add_argument('--bed_fn', type=str, default=None,
+            help="Call variant only in these regions, works in intersection with ctgName, ctgStart and ctgEnd, optional, default: as defined by ctgName, ctgStart and ctgEnd")
 
     parser.add_argument('--bam_fn', type=str, default="bam.bam",
             help="BAM file input, default: %(default)s")

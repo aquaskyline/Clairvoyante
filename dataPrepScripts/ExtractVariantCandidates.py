@@ -9,6 +9,7 @@ import subprocess
 import gc
 import signal
 import param
+import intervaltree
 from math import log
 
 is_pypy = '__pypy__' in sys.builtin_module_names
@@ -86,12 +87,27 @@ def MakeCandidates( args ):
     p1.stdout.close()
     p1.wait()
 
-    p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
-        if args.ctgStart != None and args.ctgEnd != None\
-        else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+    tree = {}
+    if args.bed_fn != None:
+        f = subprocess.Popen(shlex.split("gzip -fdc %s" % (args.bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        for row in f.stdout:
+            row = row.strip().split()
+            name = row[0]
+            if name not in tree:
+                tree[name] = intervaltree.IntervalTree()
+            begin = int(row[1])
+            end = int(row[2])-1
+            if end == begin: end += 1
+            tree[name].addi(begin, end)
+        f.stdout.close()
+        f.wait()
 
     pileup = {}
     sweep = 0
+
+    p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+        if args.ctgStart != None and args.ctgEnd != None\
+        else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     if args.can_fn != "PIPE":
         can_fpo = open(args.can_fn, "wb")
@@ -114,7 +130,7 @@ def MakeCandidates( args ):
             continue
 
         FLAG = int(l[1])
-        POS = int(l[3]) - 1 # switch from 1-base to 0-base to match sequence index 
+        POS = int(l[3]) - 1 # switch from 1-base to 0-base to match sequence index
         CIGAR = l[5]
         SEQ = l[9]
         refPos = POS
@@ -163,10 +179,20 @@ def MakeCandidates( args ):
             baseCount = pileup[sweep].items()
             refBase = refSeq[sweep - (0 if args.refStart == None else (args.refStart - 1))]
             out = None
+            outputFlag = 0
             if args.ctgStart != None and args.ctgEnd != None:
-                if pos >= args.ctgStart and pos <= args.ctgEnd:
-                    out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
+                if sweep >= args.ctgStart and sweep <= args.ctgEnd:
+                    if args.bed_fn != None:
+                        if args.ctgName in tree and len(tree[args.ctgName].search(sweep)) != 0:
+                            outputFlag = 1
+                    else:
+                        outputFlag = 1
+            elif args.bed_fn != None:
+                if args.ctgName in tree and len(tree[args.ctgName].search(sweep)) != 0:
+                    outputFlag = 1
             else:
+                outputFlag = 1
+            if outputFlag == 1:
                 out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
                 totalCount, outline = out
@@ -182,10 +208,20 @@ def MakeCandidates( args ):
         baseCount = pileup[pos].items()
         refBase = refSeq[pos - (0 if args.refStart == None else (args.refStart - 1))]
         out = None
+        outputFlag = 0
         if args.ctgStart != None and args.ctgEnd != None:
             if pos >= args.ctgStart and pos <= args.ctgEnd:
-                out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
+                if args.bed_fn != None:
+                    if args.ctgName in tree and len(tree[args.ctgName].search(pos)) != 0:
+                        outputFlag = 1
+                else:
+                    outputFlag = 1
+        elif args.bed_fn != None:
+            if args.ctgName in tree and len(tree[args.ctgName].search(pos)) != 0:
+                outputFlag = 1
         else:
+            outputFlag = 1
+        if outputFlag == 1:
             out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
             totalCount, outline = out
@@ -209,6 +245,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
+
+    parser.add_argument('--bed_fn', type=str, default=None,
+            help="Call variant only in these regions, works in intersection with ctgName, ctgStart and ctgEnd, optional, default: as defined by ctgName, ctgStart and ctgEnd")
 
     parser.add_argument('--can_fn', type=str, default="PIPE",
             help="Pile-up count output, use PIPE for standard output, default: %(default)s")

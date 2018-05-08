@@ -117,9 +117,10 @@ python ../clairvoyante/callVarBam.py \
        --chkpnt_fn ../trainedModels/fullv3-illumina-novoalign-hg001+hg002-hg38/learningRate1e-3.epoch500 \
        --bam_fn ../testingData/chr21/chr21.bam \
        --ref_fn ../testingData/chr21/chr21.fa \
-       --call_fn tensor_can_chr21.vcf \
+       --bed_fn ../testingData/chr21/chr21.bed \
+       --call_fn chr21_calls.vcf \
        --ctgName chr21
-less tensor_can_chr21.vcf
+less chr21_calls.vcf
 ```
 
 #### Call variants from the tensors of candidate variant and a trained model
@@ -139,9 +140,9 @@ less tensor_can_chr21.vcf
 | :---: | :---: |
 | BAM | `GIAB_v3.2.2_Illumina_50x_GRCh38_HG001.bam` | 
 | Reference Genome | `GRCh38_full_analysis_set_plus_decoy_hla.fa` |
-| BED for where to call variants | `GRCh38_whole_genome.bed` |
+| BED for where to call variants | `GRCh38_high_confidence_interval.bed` |
 
-* `GRCh38_whole_genome.bed` was generated firstly using the command `awk '{print $1"\t0\t"$2}' GRCh38_full_analysis_set_plus_decoy_hla.fa.fai > GRCh38_whole_genome.bed`, and then manually removing the alternative sequences and decay sequences from the bed file.
+* If no BED file was provided, Clairvoyante will call variants on the whole genome
 
 ### Commands
 ```shell
@@ -149,7 +150,7 @@ python clairvoyante/callVarBamParallel.py \
        --chkpnt_fn trainedModels/fullv3-illumina-novoalign-hg001+hg002-hg38/learningRate1e-3.epoch500 \
        --ref_fn GRCh38_full_analysis_set_plus_decoy_hla.fa \
        --bam_fn GIAB_v3.2.2_Illumina_50x_GRCh38_HG001.bam \
-       --bed_fn GRCh38_whole_genome.bed \
+       --bed_fn GRCh38_high_confidence_interval.bed \
        --sampleName HG001 \
        --output_prefix hg001 \
        --threshold 0.125 \
@@ -161,6 +162,7 @@ vcfcat hg001*.vcf | vcfstreamsort | bgziptabix hg001.vcf.gz
 ```
 
 `parallel -j4` will run 4 commands in parallel. Each command using at most `--tensorflowThreads 4` threads. `vcfcat`, `vcfstreamsort` and `bgziptabix` are a part of **vcflib**.  
+If you don't have `parallel` installed on your computer, try `awk '{print "\""$0"\""}' commands.sh | xargs -P4 -L1 sh -c`  
 
 ***
 

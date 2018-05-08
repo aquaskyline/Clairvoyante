@@ -71,7 +71,8 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
             if name not in tree:
                 tree[name] = intervaltree.IntervalTree()
             begin = int(row[1])
-            end = int(row[2])
+            end = int(row[2])-1
+            if end == begin: end += 1
             tree[name].addi(begin, end)
         f.stdout.close()
         f.wait()

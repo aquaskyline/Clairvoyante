@@ -1,8 +1,12 @@
 import os
 import sys
 import subprocess
+import intervaltree
+import shlex
 import argparse
 import param
+
+majorContigs = {"chr"+str(a) for a in range(0,22)+["X", "Y"]}.union({ str(a) for a in range(0,22)+["X", "Y"]})
 
 def CheckFileExist(fn, sfx=""):
     if not os.path.isfile(fn+sfx):
@@ -24,7 +28,8 @@ def Run(args):
     chkpnt_fn = CheckFileExist(args.chkpnt_fn, sfx=".meta")
     bam_fn = CheckFileExist(args.bam_fn)
     ref_fn = CheckFileExist(args.ref_fn)
-    bed_fn = CheckFileExist(args.bed_fn)
+    fai_fn = CheckFileExist(args.ref_fn + ".fai")
+    bed_fn = CheckFileExist(args.bed_fn) if args.bed_fn != None else None
     vcf_fn = "--vcf_fn %s" % (CheckFileExist(args.vcf_fn)) if args.vcf_fn != None else ""
     output_prefix = args.output_prefix
     threshold = args.threshold
@@ -36,16 +41,34 @@ def Run(args):
         considerleftedge = "--considerleftedge"
     else:
         considerleftedge = ""
+    includingAllContigs = args.includingAllContigs
     refChunkSize = args.refChunkSize
 
-    bed_fp = open(bed_fn)
-    for line in bed_fp:
+    tree = {}
+    if bed_fn != None:
+        bed_fp = subprocess.Popen(shlex.split("gzip -fdc %s" % (bed_fn) ), stdout=subprocess.PIPE, bufsize=8388608)
+        for row in bed_fp.stdout:
+            row = row.strip().split()
+            name = row[0]
+            if name not in tree:
+                tree[name] = intervaltree.IntervalTree()
+            begin = int(row[1])
+            end = int(row[2])-1
+            if end == begin: end += 1
+            tree[name].addi(begin, end)
+        bed_fp.stdout.close()
+        bed_fp.wait()
+
+    fai_fp = open(fai_fn)
+    for line in fai_fp:
 
         fields = line.strip().split("\t")
 
         chromName = fields[0]
-        regionStart = int(fields[1])
-        chromLength = int(fields[2])
+        if includingAllContigs == False and str(chromName) not in majorContigs:
+            continue
+        regionStart = 0
+        chromLength = int(fields[1])
 
         while regionStart < chromLength:
             start = regionStart
@@ -53,7 +76,12 @@ def Run(args):
             if end > chromLength:
                 end = chromLength
             output_fn = "%s.%s_%d_%d.vcf" % (output_prefix, chromName, regionStart, end)
-            print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
+            if bed_fn != None:
+                if chromName in tree:
+                    if len(tree[chromName].search(start, end)) != 0:
+                        print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --bed_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, bed_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
+            else:
+                print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
             regionStart = end
 
 
@@ -68,8 +96,8 @@ if __name__ == "__main__":
     parser.add_argument('--ref_fn', type=str, default="ref.fa",
             help="Reference fasta file input, default: %(default)s")
 
-    parser.add_argument('--bed_fn', type=str, default="ref.bed",
-            help="Call variant only in these regions, default: %(default)s")
+    parser.add_argument('--bed_fn', type=str, default=None,
+            help="Call variant only in these regions, optional, default: whole genome")
 
     parser.add_argument('--refChunkSize', type=int, default=10000000,
             help="Divide job with smaller genome chunk size for parallelism, default: %(default)s")
@@ -82,6 +110,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--output_prefix', type=str, default = None,
             help="Output prefix")
+
+    parser.add_argument('--includingAllContigs', type=param.str2bool, nargs='?', const=True, default=False,
+            help="Call variants on all contigs, default: chr{1..22,X,Y,M,MT} and {1..22,X,Y,MT}")
 
     parser.add_argument('--tensorflowThreads', type=int, default = 4,
             help="Number of threads per tensorflow job, default: %(default)s")
