@@ -6,7 +6,7 @@ import shlex
 import argparse
 import param
 
-majorContigs = {"chr"+str(a) for a in range(0,22)+["X", "Y"]}.union({ str(a) for a in range(0,22)+["X", "Y"]})
+majorContigs = {"chr"+str(a) for a in range(0,23)+["X", "Y"]}.union({str(a) for a in range(0,23)+["X", "Y"]})
 
 def CheckFileExist(fn, sfx=""):
     if not os.path.isfile(fn+sfx):
