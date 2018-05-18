@@ -227,6 +227,10 @@ def MakeCandidates( args ):
                 outputFlag = 1
         else:
             outputFlag = 1
+        if args.gen4Training == True:
+            if outputFlag == 1:
+                if random.uniform(0, 1) > args.outputProb:
+                    outputFlag = 0
         if outputFlag == 1:
             out = OutputCandidate(args.ctgName, pos, baseCount, refBase, args.minCoverage, args.threshold)
         if out != None:
