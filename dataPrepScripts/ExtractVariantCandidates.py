@@ -1,6 +1,6 @@
 import os
-homeDir = os.path.expanduser('~')
 import sys
+homeDir = os.path.expanduser('~')
 sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
 import argparse
 import re
@@ -10,6 +10,7 @@ import gc
 import signal
 import param
 import intervaltree
+import random
 from math import log
 
 is_pypy = '__pypy__' in sys.builtin_module_names
@@ -54,6 +55,7 @@ def MakeCandidates( args ):
     if args.gen4Training == True:
         args.minCoverage = 0
         args.threshold = 0
+        args.outputProb = (args.candidates * 2.) / (args.genomeSize)
 
     if os.path.isfile("%s.fai" % (args.ref_fn)) == False:
         print >> sys.stderr, "Fasta index %s.fai doesn't exist." % (args.ref_fn)
@@ -192,6 +194,10 @@ def MakeCandidates( args ):
                     outputFlag = 1
             else:
                 outputFlag = 1
+            if args.gen4Training == True:
+                if outputFlag == 1:
+                    if random.uniform(0, 1) > args.outputProb:
+                        outputFlag = 0
             if outputFlag == 1:
                 out = OutputCandidate(args.ctgName, sweep, baseCount, refBase, args.minCoverage, args.threshold)
             if out != None:
@@ -260,6 +266,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--gen4Training', type=param.str2bool, nargs='?', const=True, default=False,
             help="Output all genome positions as candidate for model training (Set --threshold to 0, --minCoverage to 0)")
+
+    parser.add_argument('--candidates', type=int, default=7000000,
+            help="Use with gen4Training, number of variant candidates to be generated, default: %(default)s")
+
+    parser.add_argument('--genomeSize', type=int, default=3000000000,
+            help="Use with gen4Training, default: %(default)s")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, default: %(default)s")

@@ -215,6 +215,7 @@ You can also use the PCA and t-SNE algorithms provided by TensorBoard in the `Em
 `param.py`| Global parameters for the scripts in the folder.
 `PrepDataBeforeDemo.sh`| A **Demo** showing how to prepare data for model training.
 `PrepDataBeforeDemo.pypy.sh`| The same demo but using pypy in place of python. `pypy` is highly recommended. It's easy to install, and makes the scripts run 5-10 times faster.
+`CombineMultipleGenomesForTraining.sh`| Use chr21 and chr22 to exemplify how to combine multiple samples for model training.
 
 
 `clairvoyante/` | Model Training and Variant Caller Scripts. Scripts in this folder are NOT compatible with `pypy`. Please run with `python`.
