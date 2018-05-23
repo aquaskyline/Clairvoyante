@@ -162,9 +162,9 @@ cat commands.sh | parallel -j4
 vcfcat hg001*.vcf | vcfstreamsort | bgziptabix hg001.vcf.gz
 ```
 
-`parallel -j4` will run 4 commands in parallel. Each command using at most `--tensorflowThreads 4` threads. `vcfcat`, `vcfstreamsort` and `bgziptabix` are a part of **vcflib**.  
-If you don't have `parallel` installed on your computer, try `awk '{print "\""$0"\""}' commands.sh | xargs -P4 -L1 sh -c`.  
-`CUDA_VISIBLE_DEVICES=""` makes GPUs invisible to Clairvoyante so it will use CPU only. Please notice that unless you want to run `commands.sh` in serial, you cannot use GPU because one running copy of Clairvoyante will occupy all available memory of a GPU. While the bottleneck of `callVarBam.py` is at the CPU only `CreateTensor.py` script, the effect of GPU accelerate is insignificant (roughly about 15% faster). But if you have multiple GPU cards in your system, and you want to utilize them in variant calling, you may want split the `commands.sh` in to parts, and run the parts by firstly `export CUDA_VISIBLE_DEVICES="$i"`, where `$i` is an integer from 0 identifying the seqeunce of the GPU to be used.
+* `parallel -j4` will run 4 commands in parallel. Each command using at most `--tensorflowThreads 4` threads. `vcfcat`, `vcfstreamsort` and `bgziptabix` are a part of **vcflib**.  
+* If you don't have `parallel` installed on your computer, try `awk '{print "\""$0"\""}' commands.sh | xargs -P4 -L1 sh -c`.  
+* `CUDA_VISIBLE_DEVICES=""` makes GPUs invisible to Clairvoyante so it will use CPU only. Please notice that unless you want to run `commands.sh` in serial, you cannot use GPU because one running copy of Clairvoyante will occupy all available memory of a GPU. While the bottleneck of `callVarBam.py` is at the CPU only `CreateTensor.py` script, the effect of GPU accelerate is insignificant (roughly about 15% faster). But if you have multiple GPU cards in your system, and you want to utilize them in variant calling, you may want split the `commands.sh` in to parts, and run the parts by firstly `export CUDA_VISIBLE_DEVICES="$i"`, where `$i` is an integer from 0 identifying the seqeunce of the GPU to be used.  
 
 ***
 
