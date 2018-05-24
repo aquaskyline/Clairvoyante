@@ -154,10 +154,14 @@ def OutputAlnTensor(args):
         FLAG = int(l[1])
         RNAME = l[2]
         POS = int(l[3]) - 1 # switch from 1-base to 0-base to match sequence index
+        MQ = int(l[4])
         CIGAR = l[5]
         SEQ = l[9]
         refPos = POS
         queryPos = 0
+
+        if MQ < args.minMQ:
+            continue
 
         endToCenter = {}
         activeSet = set()
@@ -271,6 +275,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--tensor_fn', type=str, default="PIPE",
             help="Tensor output, use PIPE for standard output, default: %(default)s")
+
+    parser.add_argument('--minMQ', type=int, default=0,
+            help="Minimum Mapping Quality. Mapping quality lower than the setting will be filtered, default: %(default)d")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, default: %(default)s")

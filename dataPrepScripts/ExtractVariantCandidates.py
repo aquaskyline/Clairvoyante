@@ -133,11 +133,14 @@ def MakeCandidates( args ):
 
         FLAG = int(l[1])
         POS = int(l[3]) - 1 # switch from 1-base to 0-base to match sequence index
+        MQ = int(l[4])
         CIGAR = l[5]
         SEQ = l[9]
         refPos = POS
         queryPos = 0
 
+        if MQ < args.minMQ:
+            continue
         skipBase = 0
         totalAlnPos = 0
         for m in re.finditer(cigarRe, CIGAR):
@@ -266,10 +269,13 @@ if __name__ == "__main__":
             help="Minimum allele frequence of the 1st non-reference allele for a site to be considered as a condidate site, default: %(default)f")
 
     parser.add_argument('--minCoverage', type=float, default=4,
-            help="Minimum coverage required to call a variant, default: %(default)d")
+            help="Minimum coverage required to call a variant, default: %(default)f")
+
+    parser.add_argument('--minMQ', type=int, default=0,
+            help="Minimum Mapping Quality. Mapping quality lower than the setting will be filtered, default: %(default)d")
 
     parser.add_argument('--gen4Training', type=param.str2bool, nargs='?', const=True, default=False,
-            help="Output all genome positions as candidate for model training (Set --threshold to 0, --minCoverage to 0)")
+            help="Output all genome positions as candidate for model training (Set --threshold to 0, --minCoverage to 0), default: %(default)s")
 
     parser.add_argument('--candidates', type=int, default=7000000,
             help="Use with gen4Training, number of variant candidates to be generated, default: %(default)s")
