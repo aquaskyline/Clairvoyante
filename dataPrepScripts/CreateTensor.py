@@ -114,14 +114,12 @@ def OutputAlnTensor(args):
         rowCount += 1
     refSeq = "".join(refSeq)
 
-    if len(refSeq) == 0:
-        print >> sys.stderr, "Failed to load reference seqeunce."
-        sys.exit(1)
-    else:
-        pass
-        #print >> sys.stderr, "Loaded reference %s: %d characters, %d rows" % (refName, len(refSeq), rowCount)
     p1.stdout.close()
     p1.wait()
+
+    if p1.returncode != 0 or len(refSeq) == 0:
+        print >> sys.stderr, "Failed to load reference seqeunce. Please check if the provided reference fasta %s and the ctgName %s are correct." % (args.ref_fn, args.ctgName)
+        sys.exit(1)
 
     beginToEnd = {}
     canPos = 0
@@ -145,7 +143,6 @@ def OutputAlnTensor(args):
 
     previousPos = 0; depthCap = 0
     for l in p2.stdout:
-        #print >> sys.stderr, l
         l = l.split()
         if l[0][0] == "@":
             continue

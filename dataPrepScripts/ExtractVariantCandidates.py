@@ -80,14 +80,12 @@ def MakeCandidates( args ):
         rowCount += 1
     refSeq = "".join(refSeq)
 
-    if len(refSeq) == 0:
-        print >> sys.stderr, "Failed to load reference seqeunce."
-        sys.exit(1)
-    else:
-        pass
-        #print >> sys.stderr, "Loaded reference %s: %d characters, %d rows" % (refName, len(refSeq), rowCount)
     p1.stdout.close()
     p1.wait()
+
+    if p1.returncode != 0 or len(refSeq) == 0:
+        print >> sys.stderr, "Failed to load reference seqeunce."
+        sys.exit(1)
 
     tree = {}
     if args.bed_fn != None:
@@ -103,6 +101,9 @@ def MakeCandidates( args ):
             tree[name].addi(begin, end)
         f.stdout.close()
         f.wait()
+        if args.ctgName not in tree:
+            print >> sys.stderr, "ctgName is not in the bed file, are you using the correct bed file (%s)?" % (args.bed_fn)
+            sys.exit(1)
 
     pileup = {}
     sweep = 0
@@ -121,6 +122,7 @@ def MakeCandidates( args ):
     #    signal.signal(signal.SIGALRM, PypyGCCollect)
     #    signal.alarm(60)
 
+    processedReads = 0
     for l in p2.stdout:
         l = l.strip().split()
         if l[0][0] == "@":
@@ -152,6 +154,7 @@ def MakeCandidates( args ):
         if 1.0 - float(skipBase) / (totalAlnPos + 1) < 0.55: # skip a read less than 55% aligned
             continue
 
+        processedReads += 1
         for m in re.finditer(cigarRe, CIGAR):
             advance = int(m.group(1))
             if m.group(2) == "S":
@@ -247,6 +250,10 @@ def MakeCandidates( args ):
         can_fp.stdin.close()
         can_fp.wait()
         can_fpo.close()
+
+    if processedReads == 0:
+        print >> sys.stderr, "No read has been process, please check the correctness of your BAM input (%s)." % (args.bam_fn)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

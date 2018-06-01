@@ -51,6 +51,7 @@ Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python
 ### Performance of GPUs in model training
 Equiptment | Seconds per Epoch per 11M Variant Tensors |
 :---: |:---:|
+Tesla V100 | 90 |
 GTX 1080 Ti | 170 |
 GTX 980 | 350 |
 GTX Titan | 520 |
