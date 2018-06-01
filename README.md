@@ -106,7 +106,7 @@ sh PrepDataBeforeDemo.sh
 
 ```shell
 wget 'http://www.bio8.cs.hku.hk/training.tar'
-tar -xf training.tar.gz
+tar -xf training.tar
 ```
 
 ### Call variants
