@@ -96,7 +96,7 @@ You have a slow way and a quick way to get some demo variant calls. The slow way
 #### I have plenty of time
 
 ```shell
-wget 'https://www.dropbox.com/s/0s26oru0hut9edc/testingData.tar.gz'
+wget 'http://www.bio8.cs.hku.hk/testingData.tar'
 tar -xf testingData.tar
 cd dataPrepScripts
 sh PrepDataBeforeDemo.sh
@@ -105,8 +105,8 @@ sh PrepDataBeforeDemo.sh
 #### I need some results now
 
 ```shell
-wget 'https://www.dropbox.com/s/twxe6kyv6k3owz4/training.tar.gz'
-tar -zxf training.tar.gz
+wget 'http://www.bio8.cs.hku.hk/training.tar'
+tar -xf training.tar.gz
 ```
 
 ### Call variants
@@ -179,7 +179,7 @@ Clairvoyante can predict the exact length of insertions and deletions shorter th
 ### Quick start with a model training demo
 
 ```
-wget 'https://www.dropbox.com/s/0s26oru0hut9edc/testingData.tar.gz'
+wget 'http://www.bio8.cs.hku.hk/testingData.tar'
 tar -xf testingData.tar
 cd clairvoyante
 python demoRun.py
