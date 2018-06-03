@@ -1,7 +1,5 @@
 import os
-home_dir = os.path.expanduser('~')
 import sys
-sys.path.append(home_dir+'/miniconda2/lib/python2.7/site-packages')
 import intervaltree
 import numpy as np
 import random

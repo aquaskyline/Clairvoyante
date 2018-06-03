@@ -1,7 +1,5 @@
 import os
-homeDir = os.path.expanduser('~')
 import sys
-sys.path.append(homeDir+'/miniconda2/lib/python2.7/site-packages')
 import argparse
 import os
 import re

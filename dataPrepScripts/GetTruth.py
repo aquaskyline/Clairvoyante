@@ -94,7 +94,7 @@ if __name__ == "__main__":
             help="Truth vcf file input, default: %(default)s")
 
     parser.add_argument('--var_fn', type=str, default="PIPE",
-            help="Truth variants list output, use PIPE for standard output, default: %(default)s")
+            help="Truth variants output, use PIPE for standard output, default: %(default)s")
 
     parser.add_argument('--ctgName', type=str, default="chr17",
             help="The name of sequence to be processed, default: %(default)s")
