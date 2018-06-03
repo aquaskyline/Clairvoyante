@@ -252,8 +252,8 @@ def MakeCandidates( args ):
         can_fpo.close()
 
     if processedReads == 0:
-        print >> sys.stderr, "No read has been process, please check the correctness of your BAM input (%s)." % (args.bam_fn)
-        sys.exit(1)
+        print >> sys.stderr, "No read has been process, either the genome region you specified has no read cover, or please check the correctness of your BAM input (%s)." % (args.bam_fn)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
