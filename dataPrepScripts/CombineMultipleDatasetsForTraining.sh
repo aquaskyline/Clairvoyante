@@ -11,6 +11,10 @@ if [ "$1" != "skipPrep" ] ; then
 mkdir ../training
 pypy ../dataPrepScripts/ExtractVariantCandidates.py --bam_fn ../testingData/chr21/chr21.bam --ref_fn ../testingData/chr21/chr21.fa --can_fn ../training/can_chr21_sampled --ctgName chr21 --ctgStart 10269870 --ctgEnd 46672937 --gen4Training --genomeSize 3000000000 --candidates 7000000 &
 pypy ../dataPrepScripts/ExtractVariantCandidates.py --bam_fn ../testingData/chr22/chr22.bam --ref_fn ../testingData/chr22/chr22.fa --can_fn ../training/can_chr22_sampled --ctgName chr22 --ctgStart 18924717 --ctgEnd 49973797 --gen4Training --genomeSize 3000000000 --candidates 7000000 &
+# Tips: Instead of using ExtractVariantCandidates.py plus the --gen4Training option, you can also try
+# pypy ../dataPrepScripts/RandomSampling.py --ref_fn ../testingData/chr21/chr21.fa --can_fn ../training/can_chr21_sampled --ctgName chr21 --ctgStart 10269870 --ctgEnd 46672937 --genomeSize 3000000000 --candidates 7000000
+# pypy ../dataPrepScripts/RandomSampling.py --ref_fn ../testingData/chr22/chr22.fa --can_fn ../training/can_chr22_sampled --ctgName chr22 --ctgStart 18924717 --ctgEnd 49973797 --genomeSize 3000000000 --candidates 7000000
+# Tips: To speed up, you can pipe the results of ExtractVariantCandidates.py or RandomSampling.py directly into CreateTensor.py, by not specifying the --can_fn option in both.
 pypy ../dataPrepScripts/GetTruth.py --vcf_fn ../testingData/chr21/chr21.vcf --var_fn ../training/var_chr21 --ctgName chr21 &
 pypy ../dataPrepScripts/GetTruth.py --vcf_fn ../testingData/chr22/chr22.vcf --var_fn ../training/var_chr22 --ctgName chr22 &
 wait
