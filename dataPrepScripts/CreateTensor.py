@@ -180,9 +180,7 @@ def OutputAlnTensor(args):
             if m.group(2) == "S":
                 queryPos += advance
             if m.group(2) in ("M", "=", "X"):
-                matches = []
                 for i in xrange(advance):
-                    matches.append( (refPos, SEQ[queryPos]) )
                     if refPos in beginToEnd:
                         rEnd, rCenter = beginToEnd[refPos]
                         if rCenter not in activeSet:
@@ -199,7 +197,6 @@ def OutputAlnTensor(args):
                         activeSet.remove(center)
                     refPos += 1
                     queryPos += 1
-                del matches
 
             elif m.group(2) == "I":
                 queryAdv = 0
