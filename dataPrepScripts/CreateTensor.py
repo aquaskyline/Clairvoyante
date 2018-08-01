@@ -64,6 +64,7 @@ def GetCandidate(args, beginToEnd):
         fo = sys.stdin
     for row in fo:
         row = row.split()
+        if args.ctgName != row[0]: continue
         pos = int(row[1])
         if args.ctgStart != None and pos < args.ctgStart: continue
         if args.ctgEnd != None and pos > args.ctgEnd: continue
