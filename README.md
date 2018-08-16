@@ -56,17 +56,24 @@ Using pure Python interpreter on Clairvoyante is slow. Please refer to the **Spe
 ```shell
 conda create -n clairvoyante-conda-env -c bioconda clairvoyante
 source activate clairvoyante-conda-env
+clairvoyante.py
 ```
 
-The commands above install the CPU version of TensorFlow in the virtual environment thus support only variant calling. To train a model, please install the GPU version of Tensorflow in the virtual environment:
+Download the models to a folder.  
+
+```shell
+curl http://www.bio8.cs.hku.hk/trainedModels.tbz | tar -jxf -
+```
+
+The commands above install the CPU version of TensorFlow in the virtual environment thus support only variant calling. To train a model, please install the GPU version of Tensorflow in the virtual environment:  
 
 ```shell
 conda remove tensorflow
 conda install tensorflow-gpu
 ```
 
-Use `source deactivate` to exit the virtual environment.
-Use `source activate clairvoyante-conda-env` to re-enter the virtual environment.
+Use `source deactivate` to exit the virtual environment.  
+Use `source activate clairvoyante-conda-env` to re-enter the virtual environment.  
 
 ### Speed up with PyPy
 Without a change to the code, using PyPy python interpreter on some tensorflow independent modules such as `dataPrepScripts/ExtractVariantCandidates.py` and `dataPrepScripts/CreateTensor.py` gives a 5-10 times speed up. Pypy python interpreter can be installed by apt-get, yum, Homebrew, MacPorts, etc. If you have no root access to your system, the official website of Pypy provides a portable binary distribution for Linux. Following is a rundown extracted from Pypy's website (pypy-5.8 in this case) on how to install the binaries.  
