@@ -254,8 +254,7 @@ def MakeCandidates( args ):
         sys.exit(0)
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description="Generate variant candidates using alignments")
 
     parser.add_argument('--bam_fn', type=str, default="input.bam",
@@ -308,3 +307,6 @@ if __name__ == "__main__":
 
     MakeCandidates(args)
 
+
+if __name__ == "__main__":
+    main()

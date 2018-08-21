@@ -195,8 +195,7 @@ def Test22(args, m):
         print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(6)])
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Training and testing Clairvoyante using demo dataset" )
 
@@ -210,3 +209,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

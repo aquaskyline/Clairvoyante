@@ -107,8 +107,7 @@ def Test(args, m, utils):
             logging.info("\t".join([str(ed[i][j]) for j in range(6)]))
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Evaluate trained Clairvoyante model" )
 
@@ -144,3 +143,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

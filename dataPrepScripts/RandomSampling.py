@@ -73,8 +73,7 @@ def MakeCandidates( args ):
         can_fpo.close()
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description="Generate variant candidates using alignments")
 
 
@@ -111,3 +110,6 @@ if __name__ == "__main__":
 
     MakeCandidates(args)
 
+
+if __name__ == "__main__":
+    main()

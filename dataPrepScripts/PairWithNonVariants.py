@@ -128,8 +128,7 @@ def Pair(args):
     logging.info("%.2f/%.2f Truth Variants/Non-variants outputed" % (o1, o2))
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Predict and compare using Clairvoyante" )
 
@@ -156,3 +155,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

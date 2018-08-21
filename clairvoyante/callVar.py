@@ -193,8 +193,7 @@ def Test(args, m, utils):
     logging.info("Total time elapsed: %.2f s" % (time.time() - predictStart))
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Call variants using a trained Clairvoyante model and tensors of candididate variants" )
 
@@ -233,3 +232,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

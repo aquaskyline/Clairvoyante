@@ -138,8 +138,7 @@ def Run(args):
     c.EVCInstance.wait()
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Call variants using a trained Clairvoyante model and a BAM file" )
 
@@ -213,3 +212,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     Run(args)
+
+
+if __name__ == "__main__":
+    main()

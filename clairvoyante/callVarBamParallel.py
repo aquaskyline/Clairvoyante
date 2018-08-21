@@ -85,8 +85,7 @@ def Run(args):
             regionStart = end
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Create commands for calling variants in parallel using a trained Clairvoyante model and a BAM file" )
 
@@ -145,3 +144,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     Run(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -48,8 +48,7 @@ def Calc(args):
     logging.info("Total: %d, Overlapped: %d, Percentage: %.3f" % (a, o, float(o)/a*100) )
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Calculate the number of variants in the bed regions" )
 
@@ -67,3 +66,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

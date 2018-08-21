@@ -81,8 +81,7 @@ def CalcAll(args, m, utils):
             datasetPtr += XNum2
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Calculate the loss different between training dataset and validation dataset" )
 
@@ -118,3 +117,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

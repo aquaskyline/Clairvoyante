@@ -113,8 +113,7 @@ def TrainAll(args, m, utils):
     logging.info("Training time elapsed: %.2f s" % (time.time() - trainingStart))
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Train Clairvoyante Nonstop" )
 
@@ -162,3 +161,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()

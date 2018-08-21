@@ -28,8 +28,7 @@ def Convert(args, utils):
     pickle.dump(posArrayCompressed,fh)
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Generate a binary format input tensor" )
 
@@ -59,3 +58,5 @@ if __name__ == "__main__":
 
     Run(args)
 
+if __name__ == "__main__":
+    main()

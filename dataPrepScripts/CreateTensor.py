@@ -20,7 +20,7 @@ base2num = dict(zip("ACGT", (0,1,2,3)))
 stripe2 = 4 * param.matrixNum
 stripe1 = param.matrixNum
 
-def GenerateTensor(ctgName, alns, center, refSeq):
+def GenerateTensor(args, ctgName, alns, center, refSeq):
     alnCode = [0] * ( (2*param.flankingBaseNum+1) * 4 * param.matrixNum )
     for aln in alns:
         for refPos, queryAdv, refBase, queryBase in aln:
@@ -230,7 +230,7 @@ def OutputAlnTensor(args):
         if depthCap == 0:
             for center in centerToAln.keys():
                 if center + (param.flankingBaseNum+1) < POS:
-                    l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
+                    l =  GenerateTensor(args, args.ctgName, centerToAln[center], center, refSeq)
                     if l != None:
                         tensor_fp.stdin.write(l)
                         tensor_fp.stdin.write("\n")
@@ -239,7 +239,7 @@ def OutputAlnTensor(args):
                     del centerToAln[center]
 
     for center in centerToAln.keys():
-        l =  GenerateTensor(args.ctgName, centerToAln[center], center, refSeq)
+        l =  GenerateTensor(args, args.ctgName, centerToAln[center], center, refSeq)
         if l != None:
             tensor_fp.stdin.write(l)
             tensor_fp.stdin.write("\n")
@@ -252,8 +252,7 @@ def OutputAlnTensor(args):
         tensor_fpo.close()
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Generate tensors summarizing local alignments from a BAM file and a list of candidate locations" )
 
@@ -298,3 +297,6 @@ if __name__ == "__main__":
 
     OutputAlnTensor(args)
 
+
+if __name__ == "__main__":
+    main()

@@ -52,8 +52,7 @@ def CombineDatasets(args):
     obed_fh.stdin.close(); obed_fh.wait(); obed_fpo.close()
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(
             description="Combine datasets for model training" )
 
@@ -80,3 +79,6 @@ if __name__ == "__main__":
 
     Run(args)
 
+
+if __name__ == "__main__":
+    main()
