@@ -72,13 +72,12 @@ conda remove tensorflow
 conda install tensorflow-gpu
 ```
 
-The conda environment has the Pypy intepreter installed, but doesn't have the required packages including `intervaltree` and `blosc`. The reason why they are not installed by default is because they are not available in any conda repositories. To install the two required packages, after activation, please use the following commands:
+The conda environment has the Pypy intepreter installed, but doesn't have the required package `intervaltree`. The reason why the package is not installed by default is because it is not available in any conda repositories. To install the `intervaltree` for Pypy, after activation, please use the following commands:
 
 ```
 wget https://bootstrap.pypa.io/get-pip.py
 pypy get-pip.py
 pypy -m pip install --no-cache-dir intervaltree==2.1.0
-pypy -m pip install --no-cache-dir blosc==1.4.0
 ```
 
 Use `source deactivate` to exit the virtual environment.  
