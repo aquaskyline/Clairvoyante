@@ -91,7 +91,7 @@ wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy-5.8-1-linux_x86_
 tar -jxf pypy-5.8-1-linux_x86_64-portable.tar.bz2
 cd pypy-5.8-linux_x86_64-portable/bin
 ./pypy -m ensurepip
-./pip install -U pip wheel intervaltree blosc
+./pip install -U pip wheel intervaltree
 # Use pypy as an inplace substitution of python to run the scripts in dataPrepScripts/
 ```
 
@@ -100,8 +100,7 @@ Alternatively, if you can use apt-get or yum in your system, please install both
 ```shell
 sudo apt-get install pypy pypy-dev
 wget https://bootstrap.pypa.io/get-pip.py
-sudo pypy get-pip.py
-sudo pypy -m pip install blosc  
+sudo pypy get-pip.py 
 sudo pypy -m pip install intervaltree 
 ```
 
