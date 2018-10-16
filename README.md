@@ -274,9 +274,9 @@ The trained models are in the `trainedModels/` folder.
 
 Folder | Tech | Aligner | Ref | Sample |
 --- |:---:|:---:|:---:|:---:|
-`fullv3-illumina-novoalign`<br>`-hg001+hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878+NA24385 |
-`fullv3-illumina-novoalign`<br>`-hg001-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA12878 |
-`fullv3-illumina-novoalign`<br>`-hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Nonoalign 3.02.07 | hg38 | NA24385 |
+`fullv3-illumina-novoalign`<br>`-hg001+hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Novoalign 3.02.07 | hg38 | NA12878+NA24385 |
+`fullv3-illumina-novoalign`<br>`-hg001-hg38` | Illumina HiSeq2500<sup>1</sup> | Novoalign 3.02.07 | hg38 | NA12878 |
+`fullv3-illumina-novoalign`<br>`-hg002-hg38` | Illumina HiSeq2500<sup>1</sup> | Novoalign 3.02.07 | hg38 | NA24385 |
 `fullv3-pacbio-ngmlr`<br>`-hg001+hg002+hg003+hg004-hg19` | mainly PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385+NA24149<br>+NA24143 |
 `fullv3-pacbio-ngmlr`<br>`-hg001+hg002-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878+NA24385 |
 `fullv3-pacbio-ngmlr`<br>`-hg001-hg19` | PacBio P6-C4<sup>2</sup> | NGMLR 0.2.6 | hg19 | NA12878 |
