@@ -49,7 +49,7 @@ pip install tensorflow-gpu
 
 The installation of the `blosc` library might fail if your CPU doesn't support the AVX2 instruction set. Alternatively, you can compile and install from the latest source code available in [GitHub](https://github.com/Blosc/python-blosc) with the "DISABLE_BLOSC_AVX2" environment variable set.
 
-Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS). It can be translated to Python3 using "2to3" just like other projects.  
+Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS).
 
 Using pure Python interpreter on Clairvoyante is slow. Please refer to the **Speed up with PyPy** section for speed up.  
 
