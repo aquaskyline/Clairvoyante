@@ -1,7 +1,9 @@
 import os
 import subprocess
 
-os.chdir('./clairvoyante/')
+
+pkg_dir = os.path.dirname(os.path.abspath(__file__))+os.sep+'clairvoyante'
+os.chdir(pkg_dir)
 py_sripts = [p for p in os.listdir() if p.endswith('.py')]
 
 # use python provided 2to3 to convert package scripts to python3 versions
@@ -16,3 +18,4 @@ for fn in os.listdir():
         with open(fn, 'w') as f:
             f.write(s)
         print('Fix import of %s' % fn)
+
