@@ -9,7 +9,7 @@ import gc
 import shlex
 import subprocess
 
-base2num = dict(list(zip("ACGT",(0, 1, 2, 3))))
+base2num = dict(zip("ACGT",(0, 1, 2, 3)))
 
 def SetupEnv():
     os.environ["CXX"] = "g++"
@@ -34,7 +34,7 @@ def GetTensor( tensor_fn, num ):
         try:
             chrom, coord, seq, rows[c] = UnpackATensorRecord(*(row.split()))
         except ValueError:
-            print("UnpackATensorRecord Failure", row, file=sys.stderr)
+            print >> sys.stderr, "UnpackATensorRecord Failure", row
         seq = seq.upper()
         if seq[param.flankingBaseNum] not in ["A","C","G","T"]: # TODO: Support IUPAC in the future
             continue
@@ -44,7 +44,7 @@ def GetTensor( tensor_fn, num ):
         if c == num:
             x = np.reshape(rows, (num,2*param.flankingBaseNum+1,4,param.matrixNum))
             for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
-            total += c; print("Processed %d tensors" % total, file=sys.stderr)
+            total += c; print >> sys.stderr, "Processed %d tensors" % total
             yield 0, c, x, pos
             c = 0
             rows = np.empty((num, ((2*param.flankingBaseNum+1)*4*param.matrixNum)), dtype=np.float32)
@@ -55,7 +55,7 @@ def GetTensor( tensor_fn, num ):
         f.wait()
     x = np.reshape(rows[:c], (c,2*param.flankingBaseNum+1,4,param.matrixNum))
     for i in range(1, param.matrixNum): x[:,:,:,i] -= x[:,:,:,0]
-    total += c; print("Processed %d tensors" % total, file=sys.stderr)
+    total += c; print >> sys.stderr, "Processed %d tensors" % total
     yield 1, c, x, pos
 
 
@@ -148,7 +148,7 @@ def GetTrainingArray( tensor_fn, var_fn, bed_fn, shuffle = True ):
             Y[key] = baseVec
 
         total += 1
-        if total % 100000 == 0: print("Processed %d tensors" % total, file=sys.stderr)
+        if total % 100000 == 0: print >> sys.stderr, "Processed %d tensors" % total
     f.stdout.close()
     f.wait()
 

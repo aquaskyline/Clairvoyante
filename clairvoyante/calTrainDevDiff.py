@@ -75,7 +75,7 @@ def CalcAll(args, m, utils):
                 m.getLossNoRT( XBatch, YBatch )
                 if datasetPtr >= validationStart: validationLost += m.getLossLossRTVal
                 else: trainingLost += m.getLossLossRTVal
-                print("%s\t%.10f\t%.10f" % (n, trainingLost/trainingTotal, validationLost/numValItems), file=sys.stderr)
+                print >> sys.stderr, "%s\t%.10f\t%.10f" % (n, trainingLost/trainingTotal, validationLost/numValItems)
                 break;
             i += 1
             datasetPtr += XNum2

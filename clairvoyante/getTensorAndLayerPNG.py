@@ -115,7 +115,7 @@ def CreatePNGs(args, m, utils, total, XArrayCompressed, YArrayCompressed, posArr
         posArray, _, _ = utils.DecompressArray(posArrayCompressed, i, 1, total)
         varName = posArray[0]
         varName = "-".join(varName.split(":"))
-        print("Plotting %s..." % (varName), file=sys.stderr)
+        print >> sys.stderr, "Plotting %s..." % (varName)
         # Create folder
         if not os.path.exists(varName):
             os.makedirs(varName)
