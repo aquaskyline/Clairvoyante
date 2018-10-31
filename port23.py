@@ -4,12 +4,11 @@ import subprocess
 
 pkg_dir = os.path.dirname(os.path.abspath(__file__))+os.sep+'clairvoyante'
 os.chdir(pkg_dir)
-py_sripts = [p for p in os.listdir() if p.endswith('.py')]
+py2_scripts = [p for p in os.listdir() if p.endswith('.py')]
 
-# use python provided 2to3 to convert package scripts to python3 versions
-subprocess.call(['2to3', '-nw']+py_sripts)
+print('Call 2to3 on {}'.format(', '.join(py2_scripts)))
+subprocess.call(['2to3', '-nw', '--no-diffs']+py2_scripts)
 
-# fix relative imports, overwrite to package folder
 for fn in os.listdir():
     if fn.endswith('.py') and not fn.startswith('__'):
         with open(fn, 'r') as f:
@@ -17,5 +16,4 @@ for fn in os.listdir():
         s = s.replace('from . ', '')
         with open(fn, 'w') as f:
             f.write(s)
-        print('Fix import of %s' % fn)
-
+        print('Restore absolute imports of %s' % fn)

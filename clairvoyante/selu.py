@@ -2,7 +2,7 @@
 Tensorflow Implementation of the Scaled ELU function and Dropout
 '''
 
-from __future__ import absolute_import, division, print_function
+
 import numbers
 from tensorflow.contrib import layers
 from tensorflow.python.framework import ops

@@ -4,6 +4,12 @@ import os
 import sys
 import importlib
 
+
+if sys.version_info.major >= 3:
+    clv_path = os.path.dirname(os.path.abspath(__file__))+os.sep+'clairvoyante'
+    sys.path.insert(1, clv_path)
+
+
 def mod(dir, name):
     if sys.argv[1] == name:
         r = importlib.import_module("%s.%s" % (dir, name))

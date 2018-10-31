@@ -106,37 +106,37 @@ def TrainAll(args, m):
         if endFlag != 0:
             break
     bases = np.concatenate(bases[:]); zs = np.concatenate(zs[:]); ts = np.concatenate(ts[:]); ls = np.concatenate(ls[:])
-    print >> sys.stderr, "Prediciton time elapsed: %.2f s" % (time.time() - predictStart)
+    print("Prediciton time elapsed: %.2f s" % (time.time() - predictStart), file=sys.stderr)
 
     # Evaluate the trained model
     YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-    print >> sys.stderr, "Version 2 model, evaluation on base change:"
+    print("Version 2 model, evaluation on base change:", file=sys.stderr)
     allBaseCount = top1Count = top2Count = 0
     for predictV, annotateV in zip(bases, YArray[:,0:4]):
         allBaseCount += 1
         sortPredictV = predictV.argsort()[::-1]
         if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
         elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
-    print >> sys.stderr, "all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
-                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100)
-    print >> sys.stderr, "Version 2 model, evaluation on Zygosity:"
+    print("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100), file=sys.stderr)
+    print("Version 2 model, evaluation on Zygosity:", file=sys.stderr)
     ed = np.zeros( (2,2), dtype=np.int )
     for predictV, annotateV in zip(zs, YArray[:,4:6]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(2):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(2)])
-    print >> sys.stderr, "Version 2 model, evaluation on variant type:"
+        print("\t".join([str(ed[i][j]) for j in range(2)]), file=sys.stderr)
+    print("Version 2 model, evaluation on variant type:", file=sys.stderr)
     ed = np.zeros( (4,4), dtype=np.int )
     for predictV, annotateV in zip(ts, YArray[:,6:10]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(4):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(4)])
-    print >> sys.stderr, "Version 2 model, evaluation on indel length:"
+        print("\t".join([str(ed[i][j]) for j in range(4)]), file=sys.stderr)
+    print("Version 2 model, evaluation on indel length:", file=sys.stderr)
     ed = np.zeros( (6,6), dtype=np.int )
     for predictV, annotateV in zip(ls, YArray[:,10:16]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(6):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(6)])
+        print("\t".join([str(ed[i][j]) for j in range(6)]), file=sys.stderr)
 
 def Test22(args, m):
     logging.info("Loading the chr22 dataset ...")
@@ -162,37 +162,37 @@ def Test22(args, m):
         if endFlag != 0:
             break
     bases = np.concatenate(bases[:]); zs = np.concatenate(zs[:]); ts = np.concatenate(ts[:]); ls = np.concatenate(ls[:])
-    print >> sys.stderr, "Prediciton time elapsed: %.2f s" % (time.time() - predictStart)
+    print("Prediciton time elapsed: %.2f s" % (time.time() - predictStart), file=sys.stderr)
 
     # Evaluate the trained model
     YArray, _, _ = utils.DecompressArray(YArrayCompressed, 0, total, total)
-    print >> sys.stderr, "Version 2 model, evaluation on base change:"
+    print("Version 2 model, evaluation on base change:", file=sys.stderr)
     allBaseCount = top1Count = top2Count = 0
     for predictV, annotateV in zip(bases, YArray[:,0:4]):
         allBaseCount += 1
         sortPredictV = predictV.argsort()[::-1]
         if np.argmax(annotateV) == sortPredictV[0]: top1Count += 1; top2Count += 1
         elif np.argmax(annotateV) == sortPredictV[1]: top2Count += 1
-    print >> sys.stderr, "all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
-                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100)
-    print >> sys.stderr, "Version 2 model, evaluation on Zygosity:"
+    print("all/top1/top2/top1p/top2p: %d/%d/%d/%.2f/%.2f" %\
+                (allBaseCount, top1Count, top2Count, float(top1Count)/allBaseCount*100, float(top2Count)/allBaseCount*100), file=sys.stderr)
+    print("Version 2 model, evaluation on Zygosity:", file=sys.stderr)
     ed = np.zeros( (2,2), dtype=np.int )
     for predictV, annotateV in zip(zs, YArray[:,4:6]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(2):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(2)])
-    print >> sys.stderr, "Version 2 model, evaluation on variant type:"
+        print("\t".join([str(ed[i][j]) for j in range(2)]), file=sys.stderr)
+    print("Version 2 model, evaluation on variant type:", file=sys.stderr)
     ed = np.zeros( (4,4), dtype=np.int )
     for predictV, annotateV in zip(ts, YArray[:,6:10]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(4):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(4)])
-    print >> sys.stderr, "Version 2 model, evaluation on indel length:"
+        print("\t".join([str(ed[i][j]) for j in range(4)]), file=sys.stderr)
+    print("Version 2 model, evaluation on indel length:", file=sys.stderr)
     ed = np.zeros( (6,6), dtype=np.int )
     for predictV, annotateV in zip(ls, YArray[:,10:16]):
         ed[np.argmax(annotateV)][np.argmax(predictV)] += 1
     for i in range(6):
-        print >> sys.stderr, "\t".join([str(ed[i][j]) for j in range(6)])
+        print("\t".join([str(ed[i][j]) for j in range(6)]), file=sys.stderr)
 
 
 def main():

@@ -93,7 +93,7 @@ def Run(args):
     maxCpus = multiprocessing.cpu_count()
     if args.threads == None: numCpus = multiprocessing.cpu_count()
     else: numCpus = args.threads if args.threads < multiprocessing.cpu_count() else multiprocessing.cpu_count()
-    cpuSet = ",".join(str(x) for x in random.sample(xrange(0, maxCpus), numCpus))
+    cpuSet = ",".join(str(x) for x in random.sample(range(0, maxCpus), numCpus))
     taskSet = "taskset -c %s"
     try:
         subprocess.check_output("which %s" % (taskset), shell=True)
@@ -102,7 +102,7 @@ def Run(args):
 
     if args.delay > 0:
         delay = random.randrange(0, args.delay)
-        print >> sys.stderr, "Delay %d seconds before starting variant calling ..." % (delay)
+        print("Delay %d seconds before starting variant calling ..." % (delay), file=sys.stderr)
         time.sleep(delay)
 
     try:
@@ -125,7 +125,7 @@ def Run(args):
                         (taskSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
-        print >> sys.stderr, e
+        print(e, file=sys.stderr)
         sys.exit("Failed to start required processes. Exiting...")
 
     signal.signal(signal.SIGALRM, CheckRtCode)

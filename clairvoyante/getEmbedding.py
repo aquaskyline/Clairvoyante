@@ -68,15 +68,15 @@ def get_labels(YBatch):
     for l in YBatch[:, 0:4]:
         labels1.append("%f\t%f\t%f\t%f" % (l[0], l[1], l[2], l[3]))
     for l in YBatch[:, 4:6]:
-        for i in xrange(2):
+        for i in range(2):
             if l[i] == 1:
                 labels2.append(dict2[i])
     for l in YBatch[:, 6:10]:
-        for i in xrange(4):
+        for i in range(4):
             if l[i] == 1:
                 labels3.append(dict3[i])
     for l in YBatch[:, 10:16]:
-        for i in xrange(6):
+        for i in range(6):
             if l[i] == 1:
                 labels4.append(dict4[i])
     return labels1, labels2, labels3, labels4

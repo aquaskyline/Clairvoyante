@@ -6,7 +6,7 @@ import shlex
 import argparse
 import param
 
-majorContigs = {"chr"+str(a) for a in range(0,23)+["X", "Y"]}.union({str(a) for a in range(0,23)+["X", "Y"]})
+majorContigs = {"chr"+str(a) for a in list(range(0,23))+["X", "Y"]}.union({str(a) for a in list(range(0,23))+["X", "Y"]})
 
 def CheckFileExist(fn, sfx=""):
     if not os.path.isfile(fn+sfx):
@@ -79,9 +79,9 @@ def Run(args):
             if bed_fn != None:
                 if chromName in tree:
                     if len(tree[chromName].search(start, end)) != 0:
-                        print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --bed_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, bed_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
+                        print(("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --bed_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, bed_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) ))
             else:
-                print("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) )
+                print(("python %s --chkpnt_fn %s --ref_fn %s --bam_fn %s --ctgName %s --ctgStart %d --ctgEnd %d --call_fn %s --threshold %f --minCoverage %f --pypy %s --samtools %s --delay %d --threads %d --sampleName %s %s %s" % (callVarBamBin, chkpnt_fn, ref_fn, bam_fn, chromName, regionStart, end, output_fn, threshold, minCoverage, pypyBin, samtoolsBin, delay, threads, sampleName, vcf_fn, considerleftedge) ))
             regionStart = end
 
 
