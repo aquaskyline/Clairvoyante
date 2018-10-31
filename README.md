@@ -49,8 +49,9 @@ pip install tensorflow-gpu
 
 The installation of the `blosc` library might fail if your CPU doesn't support the AVX2 instruction set. Alternatively, you can compile and install from the latest source code available in [GitHub](https://github.com/Blosc/python-blosc) with the "DISABLE_BLOSC_AVX2" environment variable set.
 
-**Python 3** Portability
-Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS). For Python3.X,   
+**Python 3** Portability  
+Clairvoyante was written in Python2 (tested on Python 2.7.10 in Linux and Python 2.7.13 in MacOS).
+For Python3.X,   
 `python port23.py`  
 will do a quickfix using `2to3` and insert package namespace into `sys.path`, which tackles python2-style import problem under python3.
 
