@@ -6,10 +6,10 @@ pkg_dir = os.path.dirname(os.path.abspath(__file__))+os.sep+'clairvoyante'
 os.chdir(pkg_dir)
 py_sripts = [p for p in os.listdir() if p.endswith('.py')]
 
-# use python provided 2to3 to convert package scripts to python3 versions
-subprocess.call(['2to3', '-nw']+py_sripts)
 
-# fix relative imports, overwrite to package folder
+subprocess.call(['2to3', '-nw', '--no-diffs']+py_sripts)
+
+
 for fn in os.listdir():
     if fn.endswith('.py') and not fn.startswith('__'):
         with open(fn, 'r') as f:
