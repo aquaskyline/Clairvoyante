@@ -10,6 +10,7 @@ from math import log
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 num2base = dict(zip((0, 1, 2, 3), "ACGT"))
+base2num = dict(zip("ACGT", (0, 1, 2, 3)))
 v1Type2Name = dict(zip((0, 1, 2, 3, 4), ('HET', 'HOM', 'INS', 'DEL', 'REF')))
 v2Zygosity2Name = dict(zip((0, 1), ('HET', 'HOM')))
 v2Type2Name = dict(zip((0, 1, 2, 3), ('REF', 'SNP', 'INS', 'DEL')))
@@ -75,72 +76,75 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             base1 = num2base[sortBase[0]]
             base2 = num2base[sortBase[1]]
             # Initialize other variables
-            refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; info = [];
-            # For SNP
-            if varType == 1 or varType == 0: # SNP or REF
-                coordination = int(coordination)
-                refBase = refSeq[param.flankingBaseNum]
-                if varType == 1: # SNP
-                    altBase = base1 if base1 != refBase else base2
-                    #altBase = "%s,%s" % (base1, base2)
-                elif varType == 0: # REF
-                    altBase = refBase
-                dp = sum(XBatch[j,param.flankingBaseNum,:,0] + XBatch[j,param.flankingBaseNum,:,3])
-            elif varType == 2: # INS
-                # infer the insertion length
-                if varLength == 0: varLength = 1
-                dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,1])
-                if varLength != maxVarLength:
-                    for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
-                        altBase += num2base[np.argmax(XBatch[j,k,:,1])]
-                else:
-                    for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
-                        referenceTensor = XBatch[j,k,:,0]; insertionTensor = XBatch[j,k,:,1]
-                        if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
-                            inferredIndelLength += 1
-                            altBase += num2base[np.argmax(insertionTensor)]
-                        else:
-                            break
-                coordination = int(coordination)
-                refBase = refSeq[param.flankingBaseNum]
-                # insertions longer than (param.flankingBaseNum-1) are marked SV
-                if inferredIndelLength >= param.flankingBaseNum:
-                    altBase = "<INS>"
-                    info.append("SVTYPE=INS")
-                else:
-                    altBase = refBase + altBase
-            elif varType == 3: # DEL
-                if varLength == 0: varLength = 1
-                dp = sum(XBatch[j,param.flankingBaseNum+1,:,0] + XBatch[j,param.flankingBaseNum+1,:,2])
-                # infer the deletion length
-                if varLength == maxVarLength:
-                    for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
-                        if k < (param.flankingBaseNum + maxVarLength) or sum(XBatch[j,k,:,2]) >= (inferIndelLengthMinimumAF * sum(XBatch[j,k,:,0])):
-                            inferredIndelLength += 1
-                        else:
-                            break
-                # deletions longer than (param.flankingBaseNum-1) are marked SV
-                coordination = int(coordination)
-                if inferredIndelLength >= param.flankingBaseNum:
+            refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; af = 0.; info = [];
+            dp = sum(XBatch[j,param.flankingBaseNum,:,0]) + sum(XBatch[j,param.flankingBaseNum,:,1]) + \
+                 sum(XBatch[j,param.flankingBaseNum,:,2]) + sum(XBatch[j,param.flankingBaseNum,:,3])
+            if dp != 0:
+                # For SNP
+                if varType == 1 or varType == 0: # SNP or REF
+                    coordination = int(coordination)
                     refBase = refSeq[param.flankingBaseNum]
-                    altBase = "<DEL>"
-                    info.append("SVTYPE=DEL")
-                elif varLength != maxVarLength:
-                    refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+varLength+1]
-                    altBase = refSeq[param.flankingBaseNum]
-                else:
-                    refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+inferredIndelLength+1]
-                    altBase = refSeq[param.flankingBaseNum]
-            if inferredIndelLength > 0 and inferredIndelLength < param.flankingBaseNum: info.append("LENGUESS=%d" % inferredIndelLength)
-            infoStr = ""
-            if len(info) == 0: infoStr = "."
-            else: infoStr = ";".join(info)
-            gtStr = ""
-            if varType == 0: gtStr = "0/0"
-            elif varZygosity == 0: gtStr = "0/1"
-            elif varZygosity == 1: gtStr = "1/1"
+                    if varType == 1: # SNP
+                        altBase = base1 if base1 != refBase else base2
+                        #altBase = "%s,%s" % (base1, base2)
+                    elif varType == 0: # REF
+                        altBase = refBase
+                    af = XBatch[j,param.flankingBaseNum,base2num[altBase],3] / dp
+                elif varType == 2: # INS
+                    # infer the insertion length
+                    if varLength == 0: varLength = 1
+                    af = sum(XBatch[j,param.flankingBaseNum+1,:,1]) / dp
+                    if varLength != maxVarLength:
+                        for k in range(param.flankingBaseNum+1, param.flankingBaseNum+varLength+1):
+                            altBase += num2base[np.argmax(XBatch[j,k,:,1])]
+                    else:
+                        for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
+                            referenceTensor = XBatch[j,k,:,0]; insertionTensor = XBatch[j,k,:,1]
+                            if k < (param.flankingBaseNum + maxVarLength) or sum(insertionTensor) >= (inferIndelLengthMinimumAF * sum(referenceTensor)):
+                                inferredIndelLength += 1
+                                altBase += num2base[np.argmax(insertionTensor)]
+                            else:
+                                break
+                    coordination = int(coordination)
+                    refBase = refSeq[param.flankingBaseNum]
+                    # insertions longer than (param.flankingBaseNum-1) are marked SV
+                    if inferredIndelLength >= param.flankingBaseNum:
+                        altBase = "<INS>"
+                        info.append("SVTYPE=INS")
+                    else:
+                        altBase = refBase + altBase
+                elif varType == 3: # DEL
+                    if varLength == 0: varLength = 1
+                    af = sum(XBatch[j,param.flankingBaseNum+1,:,2]) / dp
+                    # infer the deletion length
+                    if varLength == maxVarLength:
+                        for k in range(param.flankingBaseNum+1, 2*param.flankingBaseNum+1):
+                            if k < (param.flankingBaseNum + maxVarLength) or sum(XBatch[j,k,:,2]) >= (inferIndelLengthMinimumAF * sum(XBatch[j,k,:,0])):
+                                inferredIndelLength += 1
+                            else:
+                               break
+                    # deletions longer than (param.flankingBaseNum-1) are marked SV
+                    coordination = int(coordination)
+                    if inferredIndelLength >= param.flankingBaseNum:
+                        refBase = refSeq[param.flankingBaseNum]
+                        altBase = "<DEL>"
+                        info.append("SVTYPE=DEL")
+                    elif varLength != maxVarLength:
+                        refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+varLength+1]
+                        altBase = refSeq[param.flankingBaseNum]
+                    else:
+                        refBase = refSeq[param.flankingBaseNum:param.flankingBaseNum+inferredIndelLength+1]
+                        altBase = refSeq[param.flankingBaseNum]
+                if inferredIndelLength > 0 and inferredIndelLength < param.flankingBaseNum: info.append("LENGUESS=%d" % inferredIndelLength)
+                infoStr = ""
+                if len(info) == 0: infoStr = "."
+                else: infoStr = ";".join(info)
+                gtStr = ""
+                if varType == 0: gtStr = "0/0"
+                elif varZygosity == 0: gtStr = "0/1"
+                elif varZygosity == 1: gtStr = "1/1"
 
-            print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ:DP\t%s:%d:%d" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual, dp)
+                print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ:DP:AF\t%s:%d:%d:%.4f" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual, dp, af)
 
 
 def PrintVCFHeader(args, call_fh):
@@ -152,6 +156,7 @@ def PrintVCFHeader(args, call_fh):
     print >> call_fh, '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     print >> call_fh, '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">'
     print >> call_fh, '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">'
+    print >> call_fh, '##FORMAT=<ID=AF,Number=1,Type=Float,Description="Estimated allele frequency in the range (0,1)">'
     print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sampleName)
 
 def Test(args, m, utils):
