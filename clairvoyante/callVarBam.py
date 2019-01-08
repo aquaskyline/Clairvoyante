@@ -84,6 +84,10 @@ def Run(args):
         considerleftedge = "--considerleftedge"
     else:
         considerleftedge = ""
+    if args.qual:
+        qual = "--qual %d" % (args.qual)
+    else:
+        qual = ""
     if args.ctgStart != None and args.ctgEnd != None and int(args.ctgStart) <= int(args.ctgEnd):
         ctgRange = "--ctgStart %s --ctgEnd %s" % (args.ctgStart, args.ctgEnd)
     else:
@@ -121,8 +125,8 @@ def Run(args):
                         (pypyBin, CTBin, bam_fn, ref_fn, ctgName, ctgRange, considerleftedge, samtoolsBin, dcov) ),\
                         stdin=c.EVCInstance.stdout, stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CVInstance = subprocess.Popen(\
-            shlex.split("%s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d" %\
-                        (taskSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus) ),\
+            shlex.split("%s python %s --chkpnt_fn %s --call_fn %s --sampleName %s --threads %d --ref_fn %s %s" %\
+                        (taskSet, CVBin, chkpnt_fn, call_fn, sampleName, numCpus, ref_fn, qual) ),\
                         stdin=c.CTInstance.stdout, stdout=sys.stderr, stderr=sys.stderr, bufsize=8388608)
     except Exception as e:
         print >> sys.stderr, e
@@ -165,6 +169,9 @@ def main():
 
     parser.add_argument('--minCoverage', type=float, default=4,
             help="Minimum coverage required to call a variant, default: %(default)d")
+
+    parser.add_argument('--qual', type=int, default = None,
+            help="If set, variant with equal or higher quality will be marked PASS, or LowQual otherwise, optional")
 
     parser.add_argument('--sampleName', type=str, default = "SAMPLE",
             help="Define the sample name to be shown in the VCF file")

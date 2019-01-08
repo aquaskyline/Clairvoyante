@@ -71,6 +71,12 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             sortLength = np.sort(l[j])[::-1]
             qual = int(-4.343 * log((sortVarType[1]*sortZygosity[1]*sortLength[1]  + 1e-300) / (sortVarType[0]*sortZygosity[0]*sortLength[0]  + 1e-300)))
             if qual > 999: qual = 999
+            filt = "."
+            if args.qual != None:
+                if qual >= args.qual:
+                    filt = "PASS"
+                else:
+                    filt = "LowQual"
             # Get possible alternative bases
             sortBase = base[j].argsort()[::-1]
             base1 = num2base[sortBase[0]]
@@ -144,11 +150,13 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
                 elif varZygosity == 0: gtStr = "0/1"
                 elif varZygosity == 1: gtStr = "1/1"
 
-                print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t.\t%s\tGT:GQ:DP:AF\t%s:%d:%d:%.4f" % (chromosome, coordination, refBase, altBase, qual, infoStr, gtStr, qual, dp, af)
+                print >> call_fh, "%s\t%d\t.\t%s\t%s\t%d\t%s\t%s\tGT:GQ:DP:AF\t%s:%d:%d:%.4f" % (chromosome, coordination, refBase, altBase, qual, filt, infoStr, gtStr, qual, dp, af)
 
 
 def PrintVCFHeader(args, call_fh):
     print >> call_fh, '##fileformat=VCFv4.1'
+    print >> call_fh, '##FILTER=<ID=PASS,Description="All filters passed">'
+    print >> call_fh, '##FILTER=<ID=LowQual,Description="Confidence in this variant being real is below calling threshold.">'
     print >> call_fh, '##ALT=<ID=DEL,Description="Deletion">'
     print >> call_fh, '##ALT=<ID=INS,Description="Insertion of novel sequence">'
     print >> call_fh, '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">'
@@ -157,6 +165,16 @@ def PrintVCFHeader(args, call_fh):
     print >> call_fh, '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">'
     print >> call_fh, '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">'
     print >> call_fh, '##FORMAT=<ID=AF,Number=1,Type=Float,Description="Estimated allele frequency in the range (0,1)">'
+
+    if args.ref_fn != None:
+      fai_fn = args.ref_fn + ".fai"
+      fai_fp = open(fai_fn)
+      for line in fai_fp:
+          fields = line.strip().split("\t")
+          chromName = fields[0]
+          chromLength = int(fields[1])
+          print >> call_fh, "##contig=<ID=%s,length=%d>" % (chromName, chromLength)
+
     print >> call_fh, '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s' % (args.sampleName)
 
 def Test(args, m, utils):
@@ -211,11 +229,17 @@ def main():
     parser.add_argument('--call_fn', type=str, default = None,
             help="Output variant predictions")
 
+    parser.add_argument('--qual', type=int, default = None,
+            help="If set, variant with equal or higher quality will be marked PASS, or LowQual otherwise, optional")
+
     parser.add_argument('--sampleName', type=str, default = "SAMPLE",
             help="Define the sample name to be shown in the VCF file")
 
     parser.add_argument('--showRef', type=param.str2bool, nargs='?', const=True, default = False,
             help="Show reference calls, optional")
+
+    parser.add_argument('--ref_fn', type=str, default=None,
+                    help="Reference fasta file input, optional, print contig tags in the VCF header if set")
 
     parser.add_argument('--threads', type=int, default = None,
             help="Number of threads, optional")
