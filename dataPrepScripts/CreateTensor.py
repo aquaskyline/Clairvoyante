@@ -22,6 +22,7 @@ stripe1 = param.matrixNum
 
 def GenerateTensor(args, ctgName, alns, center, refSeq):
     alnCode = [0] * ( (2*param.flankingBaseNum+1) * 4 * param.matrixNum )
+    depth = [0] * ((2 * param.flankingBaseNum + 1))
     for aln in alns:
         for refPos, queryAdv, refBase, queryBase in aln:
             if str(refBase) not in "ACGT-":
@@ -32,6 +33,7 @@ def GenerateTensor(args, ctgName, alns, center, refSeq):
                 offset = refPos - center + (param.flankingBaseNum+1)
                 if queryBase != "-":
                     if refBase != "-":
+                        depth[offset] = depth[offset] + 1
                         alnCode[stripe2*offset + stripe1*base2num[refBase] + 0] += 1.0
                         alnCode[stripe2*offset + stripe1*base2num[queryBase] + 1] += 1.0
                         alnCode[stripe2*offset + stripe1*base2num[refBase] + 2] += 1.0
@@ -50,7 +52,7 @@ def GenerateTensor(args, ctgName, alns, center, refSeq):
                     print >> sys.stderr, "Should not reach here: %s, %s" % (refBase, queryBase)
 
     newRefPos = center - (0 if args.refStart == None else (args.refStart - 1))
-    if (newRefPos - (param.flankingBaseNum+1) >= 0):
+    if (newRefPos - (param.flankingBaseNum+1) >= 0) and depth[param.flankingBaseNum] >= args.minCoverage:
         outputLine = "%s %d %s %s" % (ctgName, center, refSeq[newRefPos-(param.flankingBaseNum+1):newRefPos+param.flankingBaseNum], " ".join("%0.1f" % x for x in alnCode))
         return outputLine
     else:
@@ -287,7 +289,10 @@ def main():
             help="Count the left-most base-pairs of a read for coverage even if the starting position of a read is after the starting position of a tensor, default: %(default)s")
 
     parser.add_argument('--dcov', type=int, default=250,
-            help="Cap depth per position at %(default)s")
+            help="Cap depth per position at %(default)d")
+
+    parser.add_argument('--minCoverage', type=int, default=0,
+                        help="Minimum coverage required to generate a tensor, default: %(default)d")
 
     args = parser.parse_args()
 
