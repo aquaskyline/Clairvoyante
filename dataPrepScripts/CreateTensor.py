@@ -126,9 +126,9 @@ def OutputAlnTensor(args):
     canPos = 0
     canGen = GetCandidate(args, beginToEnd)
 
-    p2 = subprocess.Popen(shlex.split("%s view %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
+    p2 = subprocess.Popen(shlex.split("%s view -F 2308 %s %s:%d-%d" % (args.samtools, args.bam_fn, args.ctgName, args.ctgStart, args.ctgEnd) ), stdout=subprocess.PIPE, bufsize=8388608)\
         if args.ctgStart != None and args.ctgEnd != None\
-        else subprocess.Popen(shlex.split("%s view %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
+        else subprocess.Popen(shlex.split("%s view -F 2308 %s %s" % (args.samtools, args.bam_fn, args.ctgName) ), stdout=subprocess.PIPE, bufsize=8388608)
 
     centerToAln = {}
 
