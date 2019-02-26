@@ -100,7 +100,7 @@ def Run(args):
     cpuSet = ",".join(str(x) for x in random.sample(xrange(0, maxCpus), numCpus))
     taskSet = "taskset -c %s"
     try:
-        subprocess.check_output("which %s" % (taskset), shell=True)
+        subprocess.check_output("which %s" % ("taskset"), shell=True)
     except:
         taskSet = ""
 
