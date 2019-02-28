@@ -8,6 +8,9 @@ Email: rbluo@cs.hku.hk
 ## Introduction
 Identifying the variants of DNA sequences sensitively and accurately is an important but challenging task in the field of genomics. This task is particularly difficult when dealing with Single Molecule Sequencing, the error rate of which is still tens to hundreds of times higher than Next Generation Sequencing. With the increasing prevalence of Single Molecule Sequencing, an efficient variant caller will not only expedite basic research but also enable various downstream applications. To meet this demand, we developed Clairvoyante, a multi-task five-layer convolutional neural network model for predicting variant type, zygosity, alternative allele and Indel length. On NA12878, Clairvoyante achieved 99.73%, 97.68% and 95.36% accuracy on known variants, and achieved 98.65%, 92.57%, 87.26% F1 score on the whole genome, in Illumina, PacBio, and Oxford Nanopore data, respectively. Training Clairvoyante with a sample and call variant on another shows that Clairvoyante is sample agnostic and general for variant calling. A slim version of Clairvoyante with reduced model parameters produced a much lower F1, suggesting the full model's power in disentangling subtle details in read alignment. Clairvoyante is the first method for Single Molecule Sequencing to finish a whole genome variant calling in two hours on a 28 CPU-core machine, with top-tier accuracy and sensitivity. A toolset was developed to train, utilize and visualize the Clairvoyante model easily, and is publically available here is this repo.  
 
+## A PyTorch version of Clairvoyante
+A PyTorch implementation of Clairvoyante is available at [HKU-BAL/Clairvoyante-PyTroch](https://github.com/HKU-BAL/Clairvoyante-PyTroch).
+
 ## Gallery
 ### Network topology
 ![Network Topology](http://www.bio8.cs.hku.hk/gallery/Networkv3.png)
@@ -309,7 +312,6 @@ Intel Xeon E5-2680 v4 28-core | 2900
 ***
 
 ## About Setting the Alternative Allele Frequency Cutoff
-
 Different from model training, in which all genome positions are candidates but randomly subsampled for training, variant calling using a trained model will require the user to define a minimal alternative allele frequency cutoff for a genome position to be considered as a candidate for variant calling. For all sequencing technologies, the lower the cutoff, the lower the speed. Setting a cutoff too low will increase the false positive rate significantly, while too high will increase the false negative rate significantly. The option `--threshold` controls the cutoff in these three scripts `callVarBam.py`, `callVarBamParallel.py` and `ExtractVariantCandidates.py`. The suggested cutoff is listed below for different sequencing technologies. A higher cutoff will increase the accuracy of datasets with poor sequencing quality, while a lower cutoff will increase the sensitivity in applications like clinical research. Setting a lower cutoff and further filter the variants by their quality is also a good practice.  
 
 Sequencing Technology | Alt. AF Cutoff |
@@ -329,9 +331,7 @@ The testing dataset 'testingData.tar' includes:
 
 ## Limitations
 ### On variants with two alternative alleles (GT: 1/2)
-
 Clairvoyante network version 3 can only output one of the two possible alternative alleles at a position. We will further extend the network to support genome variants with two alternative alleles.  
 
 ### On training
-
 In rare cases, the model training will stuck early at a local optimal and cannot be further optimized without a higher learning rate. As we observed ,the problem only happens at the very beginning of model training, and can be predicated if the loss remains stable in the first few training epochs.  
