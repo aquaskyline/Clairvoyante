@@ -98,7 +98,7 @@ def Run(args):
     if args.threads == None: numCpus = multiprocessing.cpu_count()
     else: numCpus = args.threads if args.threads < multiprocessing.cpu_count() else multiprocessing.cpu_count()
     cpuSet = ",".join(str(x) for x in random.sample(xrange(0, maxCpus), numCpus))
-    taskSet = "taskset -c %s"
+    taskSet = "taskset -c %s" % cpuSet
     try:
         subprocess.check_output("which %s" % ("taskset"), shell=True)
     except:
