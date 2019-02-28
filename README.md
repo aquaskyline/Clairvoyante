@@ -32,9 +32,9 @@ curl http://www.bio8.cs.hku.hk/trainedModels.tbz | tar -jxf -
 Make sure you have Tensorflow ≥ 1.0.0 installed, the following commands install the lastest CPU version of Tensorflow as well as other dependencies:  
 
 ```shell
-pip install tensorflow
+pip install tensorflow==1.9.0
 pip install blosc
-pip install intervaltree
+pip install intervaltree==2.1.0
 pip install numpy
 ```
 
