@@ -13,7 +13,7 @@ A PyTorch implementation of Clairvoyante is available at [HKU-BAL/Clairvoyante-P
 
 ## Gallery
 ### Network topology
-![Network Topology](http://www.bio8.cs.hku.hk/gallery/Networkv3.png)
+![Network Topology](http://www.bio8.cs.hku.hk/gallery/Clairvoyantev3.png)
 ### Tensor examples
 ![Tensor examples](http://www.bio8.cs.hku.hk/gallery/Tensors.png)
 ### Activations of the conv1 hidden layer to a non-variant tensor
