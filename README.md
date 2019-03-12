@@ -335,3 +335,8 @@ Clairvoyante network version 3 can only output one of the two possible alternati
 
 ### On training
 In rare cases, the model training will stuck early at a local optimal and cannot be further optimized without a higher learning rate. As we observed ,the problem only happens at the very beginning of model training, and can be predicated if the loss remains stable in the first few training epochs.  
+
+***
+
+## The next version
+Is called [Clair](https://github.com/HKU-BAL/Clair). It's still in a very early stage of development. Among a few fixes, Clair substituted Clairvoyante's three convolutional layers with two layers of BiLSTM. Clair also makes use of strand information. Our benchmarks show Clair provides about 5% higher recall than Clairvoyante on the same ONT dataset. Using r9.4.1 flip-flop data, thte SNP F1-score reached 98.14%.
