@@ -1,5 +1,0 @@
-#install tensorflow-gpu if you want to train models
-tensorflow
-numpy
-blosc
-intervaltree

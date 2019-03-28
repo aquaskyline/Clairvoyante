@@ -1,0 +1,2 @@
+blosc
+intervaltree==2.0.1
