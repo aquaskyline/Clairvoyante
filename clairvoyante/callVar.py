@@ -83,8 +83,8 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             base2 = num2base[sortBase[1]]
             # Initialize other variables
             refBase = ""; altBase = ""; inferredIndelLength = 0; dp = 0; af = 0.; info = [];
-            dp = sum(XBatch[j,param.flankingBaseNum,:,0]) + sum(XBatch[j,param.flankingBaseNum,:,1]) + \
-                 sum(XBatch[j,param.flankingBaseNum,:,2]) + sum(XBatch[j,param.flankingBaseNum,:,3])
+            dp = sum(XBatch[j,param.flankingBaseNum,:,0]) + sum(XBatch[j,param.flankingBaseNum+1,:,1]) + \
+                 sum(XBatch[j,param.flankingBaseNum+1,:,2]) + sum(XBatch[j,param.flankingBaseNum,:,3])
             if dp != 0:
                 # For SNP
                 if varType == 1 or varType == 0: # SNP or REF
