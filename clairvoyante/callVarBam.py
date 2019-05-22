@@ -117,7 +117,7 @@ def Run(args):
                             stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         else:
             c.EVCInstance = subprocess.Popen(\
-                shlex.split("%s %s --vcf_fn %s --ctgName %s %s --noGT 1" %\
+                shlex.split("%s %s --vcf_fn %s --ctgName %s %s" %\
                             (pypyBin, GTBin, vcf_fn, ctgName, ctgRange) ),\
                             stdout=subprocess.PIPE, stderr=sys.stderr, bufsize=8388608)
         c.CTInstance = subprocess.Popen(\
