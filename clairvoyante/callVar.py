@@ -70,7 +70,7 @@ def Output(args, call_fh, num, XBatch, posBatch, base, z, t, l):
             sortZygosity = np.sort(z[j])[::-1]
             sortLength = np.sort(l[j])[::-1]
             qual = int(-4.343 * log((sortVarType[1]*sortZygosity[1]*sortLength[1]  + 1e-300) / (sortVarType[0]*sortZygosity[0]*sortLength[0]  + 1e-300)))
-            if qual > 999: qual = 999
+            #if qual > 999: qual = 999
             filt = "."
             if args.qual != None:
                 if qual >= args.qual:
