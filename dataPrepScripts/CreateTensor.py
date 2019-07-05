@@ -71,10 +71,13 @@ def GetCandidate(args, beginToEnd):
         if args.ctgStart != None and pos < args.ctgStart: continue
         if args.ctgEnd != None and pos > args.ctgEnd: continue
         if args.considerleftedge == False:
-            beginToEnd[ pos - (param.flankingBaseNum+1) ] = (pos + (param.flankingBaseNum+1), pos)
+            beginToEnd[ pos - (param.flankingBaseNum+1) ] = [(pos + (param.flankingBaseNum+1), pos)]
         elif args.considerleftedge == True:
             for i in range(pos - (param.flankingBaseNum+1), pos + (param.flankingBaseNum+1)):
-                beginToEnd[ i ] = (pos + (param.flankingBaseNum+1), pos)
+                if i not in beginToEnd:
+                    beginToEnd[ i ] = [(pos + (param.flankingBaseNum+1), pos)]
+                else:
+                    beginToEnd[ i ].append((pos + (param.flankingBaseNum+1), pos))
         yield pos
 
     if args.can_fn != "PIPE":
@@ -185,8 +188,9 @@ def OutputAlnTensor(args):
             if m.group(2) in ("M", "=", "X"):
                 for i in xrange(advance):
                     if refPos in beginToEnd:
-                        rEnd, rCenter = beginToEnd[refPos]
-                        if rCenter not in activeSet:
+                        for rEnd, rCenter in beginToEnd[refPos]:
+                            if rCenter in activeSet:
+                                continue
                             endToCenter[rEnd] = rCenter
                             activeSet.add(rCenter)
                             centerToAln.setdefault(rCenter, [])
@@ -218,8 +222,9 @@ def OutputAlnTensor(args):
                             availableSlots -= 1
                             centerToAln[center][-1].append( (refPos, 0, refSeq[refPos - (0 if args.refStart == None else (args.refStart - 1))], "-" ))
                     if refPos in beginToEnd:
-                        rEnd, rCenter = beginToEnd[refPos]
-                        if rCenter not in activeSet:
+                        for rEnd, rCenter in beginToEnd[refPos]:
+                            if rCenter in activeSet:
+                                continue
                             endToCenter[rEnd] = rCenter
                             activeSet.add(rCenter)
                             centerToAln.setdefault(rCenter, [])
