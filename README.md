@@ -339,4 +339,4 @@ In rare cases, the model training will stuck early at a local optimal and cannot
 ***
 
 ## The next version
-Is called [Clair](https://github.com/HKU-BAL/Clair). It's still in a very early stage of development. Among a few fixes, Clair substituted Clairvoyante's three convolutional layers with two layers of BiLSTM. Clair also makes use of strand information. Our benchmarks show Clair provides about 5% higher recall than Clairvoyante on the same ONT dataset. Using r9.4.1 flip-flop data, thte SNP F1-score reached 98.14%.
+Is called [Clair](https://github.com/aquaskyline/Clair).
