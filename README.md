@@ -7,7 +7,8 @@ Email: rbluo@cs.hku.hk
 
 ## The successor of Clairvoyante
 Is called [Clair](https://github.com/HKU-BAL/Clair).
-Preprint is available in [bioAxiv](https://biorxiv.org/cgi/content/short/865782v1)
+Clair is published in [Nature Machine Intelligence](https://www.nature.com/articles/s42256-020-0167-4).
+A preprint is available in [bioRxiv](https://biorxiv.org/cgi/content/short/865782v1)
 
 ***
 
